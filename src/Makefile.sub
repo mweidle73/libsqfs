@@ -1,0 +1,6 @@
+LIBRARIES += libsqfs.a libsqfs.so
+
+LIBSQFS_SRC += src/destination.c
+
+libsqfs.a: $(patsubst %.c, %.la, $(LIBSQFS_SRC))
+libsqfs.so: $(patsubst %.c, %.lo, $(LIBSQFS_SRC))

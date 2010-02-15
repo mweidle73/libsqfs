@@ -1,0 +1,116 @@
+#include "internal.h"
+
+#include <stdlib.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <errno.h>
+
+typedef struct _libsqfs_destination_vmt libsqfs_destination_vmt;
+
+struct _libsqfs_destination_vmt {
+	void (*close)(libsqfs_destination_t destination);
+	ssize_t (*pwrite)(libsqfs_destination_t destination, const void * buffer, size_t size, libsqfs_off_t offset);
+	void (*truncate)(libsqfs_destination_t destination, libsqfs_off_t offset);
+};
+
+struct _libsqfs_destination {
+	const libsqfs_destination_vmt * vmt;
+};
+
+void
+libsqfs_destination_release(libsqfs_destination_t destination)
+{
+	destination->vmt->close(destination);
+}
+
+ssize_t
+libsqfs_pwrite(libsqfs_destination_t destination, const void * buffer, size_t size, libsqfs_off_t offset)
+{
+	return destination->vmt->pwrite(destination, buffer, size, offset);
+}
+
+void
+libsqfs_truncate(libsqfs_destination_t destination, libsqfs_off_t offset)
+{
+	return destination->vmt->truncate(destination, offset);
+}
+
+typedef struct _libsqfs_destination_file libsqfs_destination_file;
+struct _libsqfs_destination_file {
+	const libsqfs_destination_vmt * vmt;
+	int fd;
+	bool owns_fd;
+};
+
+static void
+libsqfs_destination_file_close(libsqfs_destination_t destination)
+{
+	libsqfs_destination_file * f = (libsqfs_destination_file *) destination;
+	if (f->owns_fd) close(f->fd);
+	free(f);
+}
+
+static ssize_t
+libsqfs_destination_file_pwrite(libsqfs_destination_t destination, const void * buffer, size_t size, libsqfs_off_t offset)
+{
+	libsqfs_destination_file * f = (libsqfs_destination_file *) destination;
+	return pwrite64(f->fd, buffer, size, offset);
+}
+
+static void
+libsqfs_destination_file_truncate(libsqfs_destination_t destination, libsqfs_off_t offset)
+{
+	libsqfs_destination_file * f = (libsqfs_destination_file *) destination;
+	ftruncate64(f->fd, offset);
+}
+
+static const libsqfs_destination_vmt libsqfs_destination_file_vmt = {
+	.close = &libsqfs_destination_file_close,
+	.pwrite = &libsqfs_destination_file_pwrite,
+	.truncate = &libsqfs_destination_file_truncate
+};
+
+libsqfs_destination_t
+libsqfs_destination_create_for_filedes(int fd)
+{
+	if (ftruncate(fd, 0)) return 0;
+	
+	libsqfs_destination_file * destination = malloc(sizeof(*destination));
+	if (!destination) {
+		errno = ENOMEM;
+		return 0;
+	}
+	
+	destination->vmt = &libsqfs_destination_file_vmt;
+	destination->fd = fd;
+	destination->owns_fd = false;
+	
+	return (libsqfs_destination_t)destination;
+}
+
+libsqfs_destination_t
+libsqfs_destination_create_for_file(const char * name, mode_t mode)
+{
+	int fd = open(name, O_CREAT|O_WRONLY, mode);
+	if (fd<0) return 0;
+	if (ftruncate(fd, 0)) {
+		int error = errno;
+		close(fd);
+		errno = error;
+		return 0;
+	}
+	
+	libsqfs_destination_file * destination = malloc(sizeof(*destination));
+	if (!destination) {
+		close(fd);
+		errno = ENOMEM;
+		return 0;
+	}
+	
+	destination->vmt = &libsqfs_destination_file_vmt;
+	destination->fd = fd;
+	destination->owns_fd = true;
+	
+	return (libsqfs_destination_t)destination;
+}
+

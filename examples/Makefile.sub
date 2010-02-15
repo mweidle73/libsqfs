@@ -1,1 +1,7 @@
-EXECUTABLES += examples/empty-image
+EXAMPLES = $(patsubst %, examples/%, empty-image)
+
+examples/empty-image: examples/empty-image.o
+
+$(EXAMPLES): LDFLAGS += libsqfs.a
+
+EXECUTABLES += $(EXAMPLES)
