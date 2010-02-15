@@ -1,6 +1,13 @@
+#ifndef LIBSQFS_INTERNAL_H
+#define LIBSQFS_INTERNAL_H
+
 #include <libsqfs.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <errno.h>
 
 /* destinations */
+
 typedef long long libsqfs_off_t;
 
 ssize_t
@@ -9,3 +16,172 @@ libsqfs_pwrite(libsqfs_destination_t destination, const void * buffer, size_t si
 void
 libsqfs_truncate(libsqfs_destination_t destination, libsqfs_off_t offset);
 
+/* inodes */
+
+struct _libsqfs_inodeattr {
+	libsqfs_inodeattr_t prev, next;
+	uid_t uid;
+	gid_t gid;
+	mode_t mode;
+	time_t ctime;
+	
+	uint16_t mapped_uid, mapped_gid;
+};
+
+void
+libsqfs_inodeattr_destroy(libsqfs_inodeattr_t attr);
+
+typedef struct _libsqfs_inode_vmt libsqfs_inode_vmt;
+
+struct _libsqfs_inode_vmt {
+	void (*destroy)(libsqfs_inode_t inode);
+	size_t (*encoded_size)(libsqfs_inode_t inode);
+	void (*encode)(libsqfs_inode_t inode, void * dst);
+};
+
+#define LIBSQFS_INODE_COMMON \
+	const libsqfs_inode_vmt * vmt; \
+	libsqfs_inode_t prev, next; \
+	libsqfs_image_t image; \
+	\
+	libsqfs_inodeattr_t attr; \
+	size_t inode_number; \
+	size_t nlink; \
+	libsqfs_off_t inode_table_offset; \
+
+struct _libsqfs_inode {
+	LIBSQFS_INODE_COMMON
+};
+
+void
+libsqfs_inode_init(libsqfs_image_t image, libsqfs_inode_t inode);
+
+void
+libsqfs_inode_destroy(libsqfs_inode_t inode);
+
+typedef struct _libsqfs_directory_entry libsqfs_directory_entry;
+
+struct _libsqfs_directory_entry {
+	libsqfs_directory_entry * prev, * next;
+	char * name;
+	libsqfs_inode_t inode;
+};
+
+struct _libsqfs_directory_inode {
+	LIBSQFS_INODE_COMMON
+	libsqfs_directory_inode_t parent;
+	struct {
+		libsqfs_directory_entry * first, * last;
+	} entries;
+	
+	libsqfs_off_t dir_table_offset;
+};
+
+typedef struct _libsqfs_inode_table {
+	libsqfs_off_t offset;
+	libsqfs_off_t size;
+} libsqfs_inode_table;
+
+void
+libsqfs_inode_table_layout(libsqfs_image_t image, libsqfs_inode_table * inode_table);
+
+bool
+libsqfs_inode_table_write(libsqfs_image_t image, libsqfs_inode_table * inode_table);
+
+/* directories */
+
+typedef struct _libsqfs_directory_table {
+	libsqfs_off_t offset;
+	libsqfs_off_t size;
+} libsqfs_directory_table;
+
+void
+libsqfs_directory_table_layout(libsqfs_image_t image, libsqfs_directory_table * dir_table);
+
+bool
+libsqfs_directory_table_write(libsqfs_image_t image, libsqfs_directory_table * dir_table);
+
+/* fragments */
+
+typedef struct _libsqfs_fragment_table {
+	libsqfs_off_t offset;
+	libsqfs_off_t size;
+} libsqfs_fragment_table;
+
+bool
+libsqfs_fragment_table_write(libsqfs_image_t image, libsqfs_fragment_table * frag_table);
+
+/* id table  */
+
+typedef struct _libsqfs_idtable libsqfs_idtable;
+struct _libsqfs_idtable {
+	uint32_t * ids;
+	size_t nids;
+	libsqfs_off_t offset;
+};
+
+void
+libsqfs_idtable_init(libsqfs_idtable * idtable);
+
+bool
+libsqfs_idtable_write(libsqfs_image_t image, libsqfs_idtable * idtable);
+
+/* returns 16-bit mapped id, or -1 on mapping failure */
+int
+libsqfs_idtable_map(libsqfs_idtable * idtable, uint32_t id);
+
+/* images */
+
+struct _libsqfs_image {
+	libsqfs_destination_t dst;
+	libsqfs_off_t size;
+	libsqfs_image_state_t state;
+	
+	uint32_t creation_time;
+	size_t block_size, block_size_log;
+	size_t compression_method;
+	
+	struct {
+		libsqfs_inodeattr_t first, last;
+	} inodeattrs;
+	struct {
+		libsqfs_inode_t first, last;
+		size_t count;
+	} inodes;
+	
+	libsqfs_idtable idtable;
+	libsqfs_inode_table inode_table;
+	libsqfs_directory_table dir_table;
+	libsqfs_fragment_table frag_table;
+	
+	libsqfs_directory_inode_t root;
+};
+
+/* reserve space in image */
+libsqfs_off_t
+libsqfs_image_reserve(libsqfs_image_t image, size_t bytes);
+
+bool
+libsqfs_write_superblock(libsqfs_image_t image);
+
+void
+libsqfs_reserve_superblock(libsqfs_image_t image);
+
+libsqfs_off_t
+libsqfs_write_metatable(libsqfs_image_t image, void * data, size_t size, bool compressed, bool index_tables);
+
+#include <endian.h>
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+static inline uint16_t cpu_to_le16(uint16_t v) {return v;}
+static inline uint32_t cpu_to_le32(uint32_t v) {return v;}
+static inline uint64_t cpu_to_le64(uint64_t v) {return v;}
+#elif __BYTE_ORDER == __BIG_ENDIAN
+#include <byteswap.h>
+static inline uint16_t cpu_to_le16(uint16_t v) {return bswap_16(v);}
+static inline uint32_t cpu_to_le32(uint32_t v) {return bswap_32(v);}
+static inline uint64_t cpu_to_le64(uint64_t v) {return bswap_64(v);}
+#else
+#error Unknown endian
+#endif
+
+#endif

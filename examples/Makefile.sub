@@ -1,7 +1,5 @@
 EXAMPLES = $(patsubst %, examples/%, empty-image)
 
-examples/empty-image: examples/empty-image.o
-
-$(EXAMPLES): LDFLAGS += libsqfs.a
+examples/empty-image: examples/empty-image.o libsqfs.a
 
 EXECUTABLES += $(EXAMPLES)
