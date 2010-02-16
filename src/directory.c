@@ -29,6 +29,13 @@ struct _libsqfs_directory_entry {
 	size_t index, offset, size;
 };
 
+static void
+libsqfs_directory_entry_destroy(libsqfs_directory_entry * entry)
+{
+	free(entry->name);
+	free(entry);
+}
+
 /* the following function takes as "reference" the first entry after the
 header coded last; it may be NULL if no header has been coded */
 static bool
@@ -113,7 +120,13 @@ static void
 libsqfs_directory_inode_destroy(libsqfs_inode_t inode)
 {
 	libsqfs_directory_inode_t dir = (libsqfs_directory_inode_t) inode;
-	/* FIXME: free entries */
+	
+	libsqfs_directory_entry * entry = dir->entries.first;
+	while(entry) {
+		libsqfs_directory_entry * next = entry->next;
+		libsqfs_directory_entry_destroy(entry);
+		entry = next;
+	}
 	free(dir);
 }
 
