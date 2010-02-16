@@ -26,7 +26,7 @@ struct _libsqfs_directory_entry {
 	char * name;
 	libsqfs_inode_t inode;
 	
-	size_t index, offset;
+	size_t index, offset, size;
 };
 
 /* the following function takes as "reference" the first entry after the
@@ -40,9 +40,11 @@ need_new_dir_header(libsqfs_directory_entry * entry, libsqfs_directory_entry * r
 	ssize_t diff = (ssize_t)entry->inode->inode_number - (ssize_t)reference->inode->inode_number;
 	if (diff<-32768 || diff>32767) return true;
 	
-	/* FIXME: check
-	- number of entries
-	- number of bytes used so far */
+	if (entry->size + entry->offset - reference->offset > SQUASHFS_METADATA_SIZE)
+		return true;
+	
+	if (entry->index - reference->index > 255)
+		return true;
 	
 	return false;
 }
@@ -50,20 +52,21 @@ need_new_dir_header(libsqfs_directory_entry * entry, libsqfs_directory_entry * r
 static size_t
 libsqfs_directory_encoded_size(libsqfs_directory_inode_t dir)
 {
-	size_t size = 0;
+	size_t offset = 0, index=0;
 	libsqfs_directory_entry * entry = dir->entries.first, * reference = 0;
 	while(entry) {
+		entry->index = index++;
+		entry->offset = offset;
+		entry->size = sizeof(struct squashfs_dir_entry) + strlen(entry->name);
 		if (need_new_dir_header(entry, reference)) {
-			size += sizeof(struct squashfs_dir_header);
+			offset += sizeof(struct squashfs_dir_header);
 			reference = entry;
 		}
-		size_t entry_size = sizeof(struct squashfs_dir_entry) + strlen(entry->name);
-		size += entry_size;
-		
+		offset += entry->size;
 		entry = entry->next;
 	}
 	
-	return size;
+	return offset;
 }
 
 static void
@@ -80,7 +83,7 @@ libsqfs_directory_encode(libsqfs_directory_inode_t dir, void * dst)
 			struct squashfs_dir_header * hdr = dst;
 			dst = hdr + 1;
 			
-			if (entry_count_loc) *entry_count_loc= cpu_to_le32(count-1);
+			if (entry_count_loc) *entry_count_loc = cpu_to_le32(count-1);
 			entry_count_loc = &hdr->count;
 			count = 0;
 			
