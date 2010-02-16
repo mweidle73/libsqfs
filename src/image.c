@@ -20,6 +20,14 @@ libsqfs_image_create(libsqfs_destination_t destination)
 	image->inodeattrs.first = image->inodeattrs.last = 0;
 	image->inodes.first = image->inodes.last = 0;
 	image->inodes.count = 0;
+	
+	image->chunks.submitted.first = image->chunks.submitted.last = 0;
+	image->chunks.next_pending = 0;
+	image->chunks.nsubmitted = image->chunks.ncompleted = 0;
+	image->chunks.done = false;
+	pthread_mutex_init(&image->chunks.lock, 0);
+	pthread_cond_init(&image->chunks.cond, 0);
+	
 	image->root = 0;
 	
 	libsqfs_idtable_init(&image->idtable);
@@ -75,6 +83,8 @@ libsqfs_image_finalize(libsqfs_image_t image)
 	
 	bool success = true;
 	
+	libsqfs_finish_chunks(image);
+	
 	libsqfs_inode_table_layout(image, &image->inode_table);
 	libsqfs_directory_table_layout(image, &image->dir_table);
 	
@@ -112,3 +122,4 @@ libsqfs_image_reserve(libsqfs_image_t image, size_t bytes)
 	image->size += bytes;
 	return current;
 }
+

@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <pthread.h>
 
 /* destinations */
 
@@ -35,6 +36,47 @@ libsqfs_data_pread(libsqfs_data_t data, void * buffer, size_t size, libsqfs_off_
 
 void
 libsqfs_data_destroy(libsqfs_data_t data);
+
+/* chunks. representing bulk data (either as complete blocks or fragments)
+to be written to the image */
+
+typedef enum {
+	libsqfs_chunk_pending,
+	libsqfs_chunk_compressed,
+	libsqfs_chunk_finished
+} libsqfs_chunk_state_t;
+
+typedef struct _libsqfs_chunk libsqfs_chunk;
+struct _libsqfs_chunk {
+	libsqfs_chunk * prev, * next;
+	libsqfs_image_t image;
+	libsqfs_chunk_state_t state;
+	
+	size_t uncompressed_size;
+	struct {
+		libsqfs_data_t data;
+		libsqfs_off_t offset;
+	} src;
+	struct {
+		libsqfs_off_t offset;
+		size_t size;
+		void * data;
+		bool compressed;
+	} dst;
+};
+typedef struct _libsqfs_chunk_list {
+	libsqfs_chunk * first, * last;
+} libsqfs_chunk_list;
+
+void
+libsqfs_image_submit_chunk(libsqfs_image_t image, libsqfs_chunk * chunk);
+
+libsqfs_chunk *
+libsqfs_image_submit_chunk_for_data(libsqfs_image_t image, libsqfs_data_t data,
+	libsqfs_off_t offset, size_t size);
+
+void
+libsqfs_finish_chunks(libsqfs_image_t image);
 
 /* inodes */
 
@@ -177,6 +219,17 @@ struct _libsqfs_image {
 		libsqfs_inode_t first, last;
 		size_t count;
 	} inodes;
+	
+	struct {
+		libsqfs_chunk_list submitted;
+		libsqfs_chunk * next_pending;
+		size_t nsubmitted, ncompleted;
+		
+		bool done;
+		
+		pthread_mutex_t lock;
+		pthread_cond_t cond;
+	} chunks;
 	
 	libsqfs_idtable idtable;
 	libsqfs_inode_table inode_table;
