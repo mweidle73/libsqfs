@@ -45,9 +45,11 @@ struct _libsqfs_inode_vmt {
 	libsqfs_image_t image; \
 	\
 	libsqfs_inodeattr_t attr; \
-	size_t inode_number; \
 	size_t nlink; \
-	libsqfs_off_t inode_table_offset; \
+	\
+	size_t inode_number; \
+	long long squashfs_inode; /* this is the on-disk "inode", consisting of encoded block+offset */\
+	int encoded_type; \
 
 struct _libsqfs_inode {
 	LIBSQFS_INODE_COMMON
@@ -61,18 +63,15 @@ libsqfs_inode_destroy(libsqfs_inode_t inode);
 
 typedef struct _libsqfs_directory_entry libsqfs_directory_entry;
 
-struct _libsqfs_directory_entry {
-	libsqfs_directory_entry * prev, * next;
-	char * name;
-	libsqfs_inode_t inode;
-};
-
 struct _libsqfs_directory_inode {
 	LIBSQFS_INODE_COMMON
+	
 	libsqfs_directory_inode_t parent;
 	struct {
 		libsqfs_directory_entry * first, * last;
 	} entries;
+	
+	libsqfs_directory_inode_t prev_dir, next_dir;
 	
 	libsqfs_off_t dir_table_offset;
 };
@@ -93,7 +92,14 @@ libsqfs_inode_table_write(libsqfs_image_t image, libsqfs_inode_table * inode_tab
 typedef struct _libsqfs_directory_table {
 	libsqfs_off_t offset;
 	libsqfs_off_t size;
+	
+	struct {
+		libsqfs_directory_inode_t first, last;
+	} dirs;
 } libsqfs_directory_table;
+
+void
+libsqfs_directory_table_init(libsqfs_directory_table * dir_table);
 
 void
 libsqfs_directory_table_layout(libsqfs_image_t image, libsqfs_directory_table * dir_table);

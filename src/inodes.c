@@ -63,20 +63,24 @@ libsqfs_inode_init(libsqfs_image_t image, libsqfs_inode_t inode)
 	
 	image->inodes.count++;
 	inode->inode_number = image->inodes.count;
-	inode->inode_table_offset = -1;
+	inode->squashfs_inode = -1;
 }
 
 
 void
 libsqfs_inode_table_layout(libsqfs_image_t image, libsqfs_inode_table * inode_table)
 {
-	inode_table->size = 0;
+	libsqfs_off_t offset = 0;
 	libsqfs_inode_t inode = image->inodes.first;
 	while(inode) {
-		inode->inode_table_offset = inode_table->size;
-		inode_table->size += inode->vmt->encoded_size(inode);
+		size_t size = inode->vmt->encoded_size(inode);
+		inode->squashfs_inode = (offset & (SQUASHFS_METADATA_SIZE-1))
+			| ((offset/SQUASHFS_METADATA_SIZE)<<16);
+		
+		offset += size;
 		inode = inode->next;
 	}
+	inode_table->size = offset;
 }
 
 bool

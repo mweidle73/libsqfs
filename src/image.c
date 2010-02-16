@@ -22,6 +22,7 @@ libsqfs_image_create(libsqfs_destination_t destination)
 	image->root = 0;
 	
 	libsqfs_idtable_init(&image->idtable);
+	libsqfs_directory_table_init(&image->dir_table);
 	
 	libsqfs_reserve_superblock(image);
 	
