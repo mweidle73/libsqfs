@@ -13,7 +13,7 @@ libsqfs_write_superblock(libsqfs_image_t image)
 	sb.fragments = cpu_to_le32(0 /* FIXME: no fragments yet */);
 	sb.compression = cpu_to_le16(image->compression_method);
 	sb.block_log = cpu_to_le16(image->block_size_log);
-	sb.flags = cpu_to_le16(0 /* FIXME: flags are not correct yet */);
+	sb.flags = cpu_to_le16(0x4b /* FIXME: flags are not correct yet */);
 	sb.no_ids = cpu_to_le16(image->idtable.nids);
 	sb.s_major = cpu_to_le16(4);
 	sb.s_minor = cpu_to_le16(0);
