@@ -16,6 +16,7 @@ libsqfs_image_create(libsqfs_destination_t destination)
 	image->block_size = 1 << image->block_size_log;
 	image->compression_method = 1 /* ZLIB_COMPRESSION */;
 	image->state = libsqfs_image_building;
+	image->dataitems.first = image->dataitems.last = 0;
 	image->inodeattrs.first = image->inodeattrs.last = 0;
 	image->inodes.first = image->inodes.last = 0;
 	image->inodes.count = 0;
@@ -39,6 +40,13 @@ libsqfs_image_state_t
 libsqfs_image_close(libsqfs_image_t image)
 {
 	libsqfs_image_state_t state = libsqfs_image_finalize(image);
+	
+	libsqfs_data_t data = image->dataitems.first;
+	while(data) {
+		libsqfs_data_t next = data->next;
+		libsqfs_data_destroy(data);
+		data = next;
+	}
 	
 	libsqfs_inode_t inode = image->inodes.first;
 	while(inode) {
