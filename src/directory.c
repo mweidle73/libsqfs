@@ -136,8 +136,8 @@ libsqfs_directory_inode_encode(libsqfs_inode_t inode, void * dst)
 	hdr->mtime = cpu_to_le32(dir->attr->ctime);
 	hdr->inode_number = cpu_to_le32(dir->inode_number);
 	
-	hdr->start_block = 0; /* FIXME: points to block in dir table */
-	hdr->offset = cpu_to_le16(0); /* points to block in dir table */
+	hdr->start_block = cpu_to_le32(dir->dir_table_offset / SQUASHFS_METADATA_SIZE);
+	hdr->offset = cpu_to_le16(dir->dir_table_offset % SQUASHFS_METADATA_SIZE);
 	
 	hdr->nlink = cpu_to_le32(dir->nlink);
 	
