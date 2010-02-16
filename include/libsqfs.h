@@ -312,9 +312,8 @@ libsqfs_directory_inode_create(libsqfs_image_t image, libsqfs_inodeattr_t attr);
 	
 	Adds named entry to directory.
 	It is possible (and legal) to create multiple names for the
-	same inode (equivalent to multiple "hard links"). It is also possible
-	to create hard-linked directories, but the caller is responsible
-	for ensuring that no directory loops are created.
+	same inode (equivalent to multiple "hard links"), but hard-linked
+	directories are disallowed.
 */
 bool
 libsqfs_directory_add_entry(libsqfs_directory_inode_t parent, const char * name, libsqfs_inode_t inode);

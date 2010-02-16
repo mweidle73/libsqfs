@@ -190,9 +190,19 @@ libsqfs_directory_add_entry(libsqfs_directory_inode_t parent, const char * name,
 		return false;
 	}
 	
-	inode->nlink++;
-	if (inode->vmt == &libsqfs_directory_inode_vmt) parent->nlink++;
+	if (inode->vmt == &libsqfs_directory_inode_vmt) {
+		if (((libsqfs_directory_inode_t) inode)->parent) {
+			/* this directory already has a parent, it cannot
+			have another one; bail out */
+			free(entry->name);
+			free(entry);
+			return false;
+		}
+		((libsqfs_directory_inode_t) inode)->parent = parent;
+		parent->nlink++;
+	}
 	
+	inode->nlink++;
 	entry->inode = inode;
 	entry->prev = parent->entries.last;
 	entry->next = 0;
