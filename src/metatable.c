@@ -1,6 +1,11 @@
 #include "internal.h"
 #include "squashfs_fs.h"
 
+/* FIXME: the signature of the following function is not to my liking; it should
+be split into two functions, one writing just the tables, and another adding
+the index table -- controlling this with a flag is just ugly
+
+Additionally, the function does no error checking currently */
 libsqfs_off_t
 libsqfs_write_metatable(libsqfs_image_t image, void * data, size_t size, bool compressed, bool index_tables)
 {
