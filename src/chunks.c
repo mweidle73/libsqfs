@@ -113,14 +113,14 @@ libsqfs_image_compress_chunk(libsqfs_image_t image, libsqfs_chunk * chunk)
 	be allowing allocations if the pool is drained, but IMHO this
 	makes the pool somewhat pointless and more seriously precludes
 	setting an upper hard limit for the memory usage). */
-	chunk->dst.data = malloc(chunk->uncompressed_size);
+	chunk->dst.data = malloc(chunk->src.size);
 	if (!chunk->dst.data) return false;
 	
-	ssize_t count = libsqfs_data_pread(chunk->src.data, chunk->dst.data, chunk->uncompressed_size, chunk->src.offset);
-	if (count != chunk->uncompressed_size) return false;
+	ssize_t count = libsqfs_data_pread(chunk->src.data, chunk->dst.data, chunk->src.size, chunk->src.offset);
+	if (count != chunk->src.size) return false;
 	
 	/* currently, no compression is done, obviously */
-	chunk->dst.size = chunk->uncompressed_size;
+	chunk->dst.size = chunk->src.size;
 	chunk->dst.compressed = false;
 	
 	return true;
@@ -178,7 +178,7 @@ libsqfs_image_submit_chunk_for_data(libsqfs_image_t image, libsqfs_data_t data,
 	libsqfs_chunk * chunk = malloc(sizeof(*chunk));
 	if (!chunk) return 0;
 	
-	chunk->uncompressed_size = size;
+	chunk->src.size = size;
 	chunk->src.data = data;
 	chunk->src.offset = 0;
 	

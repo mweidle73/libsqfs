@@ -52,11 +52,7 @@ struct _libsqfs_chunk {
 	libsqfs_image_t image;
 	libsqfs_chunk_state_t state;
 	
-	size_t uncompressed_size;
-	struct {
-		libsqfs_data_t data;
-		libsqfs_off_t offset;
-	} src;
+	libsqfs_data_piece src;
 	struct {
 		libsqfs_off_t offset;
 		size_t size;
