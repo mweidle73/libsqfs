@@ -1,7 +1,9 @@
-EXAMPLES = $(patsubst %, examples/%, empty-image dir-layout)
+EXAMPLES = $(patsubst %, examples/%, empty-image dir-layout simple-file)
 
 examples/empty-image: examples/empty-image.o libsqfs.a
 
 examples/dir-layout: examples/dir-layout.o libsqfs.a
+
+examples/simple-file: examples/simple-file.o libsqfs.a
 
 EXECUTABLES += $(EXAMPLES)
