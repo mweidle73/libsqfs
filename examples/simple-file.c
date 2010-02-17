@@ -1,6 +1,6 @@
 #include <libsqfs.h>
 
-const char sentence[] = "The quick brown fox jumped over the lazy dog.\n";
+const char sentence[] = "The quick brown fox jumps over the lazy dog.\n";
 
 int main(void)
 {
