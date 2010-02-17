@@ -1,0 +1,13 @@
+TESTS = $(patsubst %, tests/%, compounddata)
+
+tests/compounddata: tests/compounddata.o libsqfs.a
+
+EXECUTABLES += $(TESTS)
+
+check: $(TESTS)
+	@for T in $(TESTS); do \
+		echo Running test $$T ; \
+		$$T || exit 1 ; \
+	done
+
+.PHONY: check

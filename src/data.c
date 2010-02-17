@@ -177,3 +177,98 @@ libsqfs_data_create_for_transferred_buffer(libsqfs_image_t image, void * buffer,
 	return libsqfs_data_create_for_buffer(image, buffer, size, free, buffer);
 }
 
+typedef struct _libsqfs_compounddata {
+	const libsqfs_data_vmt * vmt;
+	libsqfs_data_t prev, next;
+	libsqfs_image_t image;
+	
+	libsqfs_data_piece * pieces;
+	size_t npieces;
+	
+	libsqfs_off_t size;
+} libsqfs_compounddata;
+
+static libsqfs_off_t
+libsqfs_compounddata_get_size(libsqfs_data_t data)
+{
+	libsqfs_compounddata * comp = (libsqfs_compounddata *)data;
+	return comp->size;
+}
+
+static ssize_t
+libsqfs_compounddata_pread(libsqfs_data_t data, void * buffer, size_t size, libsqfs_off_t offset)
+{
+	libsqfs_compounddata * comp = (libsqfs_compounddata *)data;
+	if (offset > comp->size) return 0;
+	if (offset+size > comp->size) size = comp->size - offset;
+	
+	/* for each piece, check if it overlaps with the range to be read */
+	ssize_t written = 0;
+	size_t n;
+	libsqfs_off_t current_offset = 0;
+	for(n=0; n<comp->npieces; n++) {
+		libsqfs_off_t piece_begin = current_offset;
+		libsqfs_off_t piece_end = current_offset + comp->pieces[n].size;
+		
+		current_offset = piece_end;
+		if (piece_end <= offset) continue;
+		if (piece_begin >= offset+size) break;
+		
+		/* copy data in overlapping range */
+		libsqfs_off_t copy_begin = piece_begin, copy_end = piece_end;
+		if (copy_begin < offset) copy_begin = offset;
+		if (copy_end > offset+size) copy_end = offset+size;
+		
+		ssize_t count = libsqfs_data_pread(
+			comp->pieces[n].data,
+			(copy_begin-offset) + (char *) buffer,
+			copy_end - copy_begin,
+			comp->pieces[n].offset + copy_begin - piece_begin);
+		if (count<0) break;
+		written += count;
+		if (count != copy_end - copy_begin) break;
+	}
+	return written;
+}
+
+static void
+libsqfs_compounddata_destroy(libsqfs_data_t data)
+{
+	libsqfs_compounddata * comp = (libsqfs_compounddata *)data;
+	free(comp->pieces);
+	free(comp);
+}
+
+const libsqfs_data_vmt libsqfs_compounddata_vmt = {
+	.get_size = &libsqfs_compounddata_get_size,
+	.pread = &libsqfs_compounddata_pread,
+	.destroy = &libsqfs_compounddata_destroy
+};
+
+libsqfs_data_t
+libsqfs_data_create_compound(libsqfs_image_t image, size_t npieces,
+	const libsqfs_data_piece pieces[])
+{
+	libsqfs_compounddata * comp = malloc(sizeof(*comp));
+	if (!comp) return 0;
+	
+	comp->pieces = malloc(sizeof(pieces[0]) * npieces);
+	if (!comp->pieces) {
+		free(comp);
+		return 0;
+	}
+	
+	comp->npieces = npieces;
+	comp->size = 0;
+	size_t n;
+	for(n=0; n<npieces; n++) {
+		comp->pieces[n] = pieces[n];
+		comp->size += pieces[n].size;
+	}
+	
+	libsqfs_data_init(image, (libsqfs_data_t)comp);
+	
+	comp->vmt = &libsqfs_compounddata_vmt;
+	
+	return (libsqfs_data_t) comp;
+}

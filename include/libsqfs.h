@@ -391,6 +391,27 @@ libsqfs_data_t
 libsqfs_data_create_for_transferred_buffer(libsqfs_image_t image, void * buffer, size_t size);
 
 /**
+	\brief Piece of a data element
+*/
+typedef struct _libsqfs_data_piece {
+	libsqfs_data_t data;
+	unsigned long long size, offset;
+} libsqfs_data_piece;
+
+/**
+	\brief Create file data
+	\param image @c squashfs image handle
+	\param npieces Number of pieces
+	\param pieces Pieces of data
+	
+	Creates a handle that represents the data composed of the
+	specified individual pieces.
+*/
+libsqfs_data_t
+libsqfs_data_create_compound(libsqfs_image_t image, size_t npieces,
+	const libsqfs_data_piece pieces[]);
+
+/**
 	\brief Create regular ("file") inode
 	\param image @c squashfs image handle
 	\param attr Attributes
