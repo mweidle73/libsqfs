@@ -50,7 +50,7 @@ libsqfs_destination_create_for_file(const char * name, mode_t mode);
 /*@}*/
 
 /**
-	\defgroup images @c squashfs images
+	\defgroup images Squashfs images
 */
 /*@{*/
 
