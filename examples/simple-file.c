@@ -5,7 +5,7 @@ const char sentence[] = "The quick brown fox jumps over the lazy dog.\n";
 int main(void)
 {
 	libsqfs_destination_t dest = libsqfs_destination_create_for_file("/tmp/test.img", 0644);
-	libsqfs_image_t image = libsqfs_image_create(dest);
+	libsqfs_image_t image = libsqfs_image_create(dest, 0);
 	
 	libsqfs_inodeattr_t fileattr = libsqfs_inodeattr_create_simple(image, 1000, 1000, 0644, 0);
 	libsqfs_data_t data = libsqfs_data_create_for_static_buffer(image, sentence, sizeof(sentence)-1);

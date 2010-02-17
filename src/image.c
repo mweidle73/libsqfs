@@ -1,7 +1,63 @@
 #include "internal.h"
 
+static void
+libsqfs_image_options_defaults(libsqfs_image_options_t options)
+{
+	options->inode_compression = false;
+	options->data_compression = false;
+	options->fragment_compression = false;
+	options->fragments = libsqfs_fragments_never;
+	options->exportable = false;
+	options->compression_method = 1;
+}
+
+libsqfs_image_options_t
+libsqfs_image_options_create(void)
+{
+	libsqfs_image_options_t options = malloc(sizeof(*options));
+	if (!options) return 0;
+	libsqfs_image_options_defaults(options);
+	return options;
+}
+
+void
+libsqfs_image_options_destroy(libsqfs_image_options_t options)
+{
+	free(options);
+}
+
+void
+libsqfs_image_options_set_inode_compression(libsqfs_image_options_t options, bool compress)
+{
+	options->inode_compression = compress;
+}
+
+void
+libsqfs_image_options_set_data_compression(libsqfs_image_options_t options, bool compress)
+{
+	options->data_compression = compress;
+}
+
+
+void
+libsqfs_image_options_set_fragment_compression(libsqfs_image_options_t options, bool compress)
+{
+	options->fragment_compression = compress;
+}
+
+void
+libsqfs_image_options_set_exportable(libsqfs_image_options_t options, bool exportable)
+{
+	options->exportable = exportable;
+}
+void
+libsqfs_image_options_set_fragment_option(libsqfs_image_options_t options, libsqfs_fragments_option fragments)
+{
+	options->fragments = fragments;
+}
+
 libsqfs_image_t
-libsqfs_image_create(libsqfs_destination_t destination)
+libsqfs_image_create(libsqfs_destination_t destination, libsqfs_image_options_t options)
 {
 	libsqfs_image_t image = malloc(sizeof(*image));
 	if (!image) {
@@ -9,6 +65,8 @@ libsqfs_image_create(libsqfs_destination_t destination)
 		return 0;
 	}
 	
+	if (options) image->options = *options;
+	else libsqfs_image_options_defaults(&image->options);
 	image->dst = destination;
 	image->size = 0;
 	image->creation_time = 0;

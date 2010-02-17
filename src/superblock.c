@@ -1,10 +1,31 @@
 #include "internal.h"
 #include "squashfs_fs.h"
 
+static inline uint16_t
+fragments_option_to_flag(libsqfs_fragments_option fragments)
+{
+	switch(fragments) {
+		case libsqfs_fragments_never: return 1<<SQUASHFS_NO_FRAG;
+		case libsqfs_fragments_tail: return 0;
+		case libsqfs_fragments_always: return 1<<SQUASHFS_ALWAYS_FRAG;
+	}
+	return 0;
+}
+
 bool
 libsqfs_write_superblock(libsqfs_image_t image)
 {
 	struct squashfs_super_block sb;
+	
+	uint16_t flags = 0
+		| (image->options.inode_compression ? 0 : 1<<SQUASHFS_NOI)
+		| (image->options.data_compression ? 0 : 1<<SQUASHFS_NOD)
+		| (image->options.fragment_compression ? 0 : 1<<SQUASHFS_NOF)
+		| fragments_option_to_flag(image->options.fragments)
+		| (image->options.exportable ? 1<<SQUASHFS_EXPORT : 0)
+		| (1<<SQUASHFS_DUPLICATE)
+		;
+	
 	
 	sb.s_magic = cpu_to_le32(SQUASHFS_MAGIC);
 	sb.inodes = cpu_to_le32(image->inodes.count);
@@ -13,7 +34,7 @@ libsqfs_write_superblock(libsqfs_image_t image)
 	sb.fragments = cpu_to_le32(0 /* FIXME: no fragments yet */);
 	sb.compression = cpu_to_le16(image->compression_method);
 	sb.block_log = cpu_to_le16(image->block_size_log);
-	sb.flags = cpu_to_le16(0x5b /* FIXME: flags are not correct yet */);
+	sb.flags = cpu_to_le16(flags);
 	sb.no_ids = cpu_to_le16(image->idtable.nids);
 	sb.s_major = cpu_to_le16(4);
 	sb.s_minor = cpu_to_le16(0);

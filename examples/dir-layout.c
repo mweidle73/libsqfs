@@ -3,7 +3,7 @@
 int main(void)
 {
 	libsqfs_destination_t dest = libsqfs_destination_create_for_file("/tmp/test.img", 0644);
-	libsqfs_image_t image = libsqfs_image_create(dest);
+	libsqfs_image_t image = libsqfs_image_create(dest, 0);
 	
 	libsqfs_inodeattr_t iattr = libsqfs_inodeattr_create_simple(image, /* uid */ 1000, /* gid */ 1000, 0755, 0);
 	

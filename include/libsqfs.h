@@ -55,6 +55,84 @@ libsqfs_destination_create_for_file(const char * name, mode_t mode);
 /*@{*/
 
 /**
+	\defgroup image_options Squashfs image options
+	
+	Options controlling the on-disk layout of the generated filesystem image
+*/
+/*@{*/
+
+/** \brief Options controlling creation of fragment blocks */
+typedef enum {
+	/** \brief Never create fragments, store files in blocks */
+	libsqfs_fragments_never,
+	/** \brief Create fragments to group tails of multiple files together */
+	libsqfs_fragments_tail,
+	/** \brief Attempt to store files entirely in fragments */
+	libsqfs_fragments_always
+} libsqfs_fragments_option;
+
+/** \brief Options influencing on-disk layout of image */
+typedef struct _libsqfs_image_options * libsqfs_image_options_t;
+
+/**
+	\brief Create handle for image options
+	\returns Handle for default image options
+	
+	Options are set up with library defaults.
+*/
+libsqfs_image_options_t
+libsqfs_image_options_create(void);
+
+/**
+	\brief Destroy image options
+	\param options Handle for options to destroy
+*/
+void
+libsqfs_image_options_destroy(libsqfs_image_options_t options);
+
+/**
+	\brief Control compression of inode tables
+	\param options Handle for options
+	\param compress Turn compression on/off
+*/
+void
+libsqfs_image_options_set_inode_compression(libsqfs_image_options_t options, bool compress);
+
+/**
+	\brief Control compression of data blocks
+	\param options Handle for options
+	\param compress Turn compression on/off
+*/
+void
+libsqfs_image_options_set_data_compression(libsqfs_image_options_t options, bool compress);
+
+/**
+	\brief Control compression of fragment blocks
+	\param options Handle for options
+	\param compress Turn compression on/off
+*/
+void
+libsqfs_image_options_set_fragment_compression(libsqfs_image_options_t options, bool compress);
+
+/**
+	\brief Control generation of export table (for NFS)
+	\param options Handle for options
+	\param exportable Control whether file system is exportable
+*/
+void
+libsqfs_image_options_set_exportable(libsqfs_image_options_t options, bool exportable);
+
+/**
+	\brief Control generation of fragment blocks
+	\param options Handle for options
+	\param fragments Strategy to use for generation of fragment blocks
+*/
+void
+libsqfs_image_options_set_fragment_option(libsqfs_image_options_t options, libsqfs_fragments_option fragments);
+
+/*@}*/
+
+/**
 	\brief @c squashfs image handle
 	
 	Represents one @c squashfs image that is currently being processed.
@@ -76,12 +154,13 @@ typedef enum {
 /**
 	\brief Create @c squashfs image
 	\param destination Output destination descriptor
+	\param options Options controlling on-disk layout of image (or NULL for defaults)
 	\return @c squashfs image handle, or NULL on error with errno set appropriately
 	
 	Create new image
 */
 libsqfs_image_t
-libsqfs_image_create(libsqfs_destination_t destination);
+libsqfs_image_create(libsqfs_destination_t destination, libsqfs_image_options_t options);
 
 /**
 	\brief Query state of @c squashfs image

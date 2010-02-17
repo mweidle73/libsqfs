@@ -200,7 +200,18 @@ libsqfs_idtable_map(libsqfs_idtable * idtable, uint32_t id);
 
 /* images */
 
+typedef struct _libsqfs_image_options libsqfs_image_options;
+struct _libsqfs_image_options {
+	bool inode_compression;
+	bool data_compression;
+	bool fragment_compression;
+	libsqfs_fragments_option fragments;
+	bool exportable;
+	int compression_method;
+};
+
 struct _libsqfs_image {
+	libsqfs_image_options options;
 	libsqfs_destination_t dst;
 	libsqfs_off_t size;
 	libsqfs_image_state_t state;
