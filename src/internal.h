@@ -248,6 +248,7 @@ struct _libsqfs_image_options {
 	libsqfs_fragments_option fragments;
 	bool exportable;
 	int compression_method;
+	bool padding;
 };
 
 struct _libsqfs_image {

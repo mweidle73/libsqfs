@@ -132,6 +132,18 @@ void
 libsqfs_image_options_set_exportable(libsqfs_image_options_t options, bool exportable);
 
 /**
+	\brief Control padding
+	\param options Handle for options
+	\param padding Control whether file system image is padded
+	
+	Filesystems must be padded to a multiple of 4096 bytes if they
+	are to be loop-back mounted. Except for debugging purposes it is
+	generally advisable to leave this flag unchanged.
+*/
+void
+libsqfs_image_options_set_padding(libsqfs_image_options_t options, bool padding);
+
+/**
 	\brief Control generation of fragment blocks
 	\param options Handle for options
 	\param fragments Strategy to use for generation of fragment blocks

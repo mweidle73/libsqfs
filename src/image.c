@@ -9,6 +9,7 @@ libsqfs_image_options_defaults(libsqfs_image_options_t options)
 	options->fragments = libsqfs_fragments_tail;
 	options->exportable = false;
 	options->compression_method = 1;
+	options->padding = true;
 }
 
 libsqfs_image_options_t
@@ -50,6 +51,13 @@ libsqfs_image_options_set_exportable(libsqfs_image_options_t options, bool expor
 {
 	options->exportable = exportable;
 }
+
+void
+libsqfs_image_options_set_padding(libsqfs_image_options_t options, bool padding)
+{
+	options->padding = padding;
+}
+
 void
 libsqfs_image_options_set_fragment_option(libsqfs_image_options_t options, libsqfs_fragments_option fragments)
 {
@@ -159,6 +167,12 @@ libsqfs_image_finalize(libsqfs_image_t image)
 	success = success && libsqfs_fragment_table_write(image, &image->frag_table);
 	success = success && libsqfs_idtable_write(image, &image->idtable);
 	success = success && libsqfs_write_superblock(image);
+	
+	if (success && image->options.padding) {
+		libsqfs_off_t padded_size = (image->size + 4095) & ~4095;
+		if (padded_size != image->size)
+			libsqfs_truncate(image->dst, padded_size);
+	}
 	
 	if (success) image->state = libsqfs_image_finalized;
 	else image->state = libsqfs_image_error;
