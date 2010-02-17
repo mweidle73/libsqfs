@@ -327,9 +327,9 @@ typedef struct _libsqfs_inode * libsqfs_inode_t;
 /*@{*/
 
 /**
-	\brief Regular ("file") inode handle
+	\defgroup regular_inode_data File data
 */
-typedef struct _libsqfs_regular_inode * libsqfs_regular_inode_t;
+/*@{*/
 
 /**
 	\brief File data content handle
@@ -392,10 +392,16 @@ libsqfs_data_create_for_transferred_buffer(libsqfs_image_t image, void * buffer,
 
 /**
 	\brief Piece of a data element
+	
+	Represents a "piece" of a larger data element
 */
 typedef struct _libsqfs_data_piece {
+	/** \brief Referenced data piece */
 	libsqfs_data_t data;
-	unsigned long long size, offset;
+	/** \brief Size of the piece */
+	unsigned long long size;
+	/** \brief Offset of the piece */
+	unsigned long long offset;
 } libsqfs_data_piece;
 
 /**
@@ -410,6 +416,13 @@ typedef struct _libsqfs_data_piece {
 libsqfs_data_t
 libsqfs_data_create_compound(libsqfs_image_t image, size_t npieces,
 	const libsqfs_data_piece pieces[]);
+
+/*@}*/
+
+/**
+	\brief Regular ("file") inode handle
+*/
+typedef struct _libsqfs_regular_inode * libsqfs_regular_inode_t;
 
 /**
 	\brief Create regular ("file") inode
