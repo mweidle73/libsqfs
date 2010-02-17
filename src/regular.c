@@ -10,6 +10,7 @@ struct _libsqfs_regular_inode {
 	libsqfs_off_t file_size;
 	size_t nblocks;
 	libsqfs_chunk ** blocks;
+	libsqfs_fragment_piece * tail_piece;
 };
 
 static size_t
@@ -35,11 +36,17 @@ libsqfs_regular_inode_encode(libsqfs_inode_t inode, void * dst)
 	hdr->mtime = cpu_to_le32(reg->attr->ctime);
 	hdr->inode_number = cpu_to_le32(reg->inode_number);
 	
-	/* FIXME: there may not be a first block... */
-	hdr->start_block = cpu_to_le32(reg->blocks[0]->dst.offset);
-	/* FIXME: write fragment info */
-	hdr->fragment = cpu_to_le32(-1);
-	hdr->offset = cpu_to_le32(0);
+	if (reg->nblocks)
+		hdr->start_block = cpu_to_le32(reg->blocks[0]->dst.offset);
+	else
+		hdr->start_block = cpu_to_le32(0);
+	if (reg->tail_piece) {
+		hdr->fragment = cpu_to_le32(reg->tail_piece->fragment->index);
+		hdr->offset = cpu_to_le32(reg->tail_piece->offset);
+	} else {
+		hdr->fragment = cpu_to_le32(-1);
+		hdr->offset = cpu_to_le32(0);
+	}
 	hdr->file_size = cpu_to_le32(reg->file_size);
 	
 	unsigned int * block_info = dst;
@@ -74,10 +81,28 @@ libsqfs_regular_inode_create(libsqfs_image_t image, libsqfs_inodeattr_t attr, li
 	/* FIXME: flag error on image */
 	if (file_size==-1) return 0;
 	
-	/* FIXME: this currently stores file tails in blocks as well; this
-	works, but support for coalescing multiple tails in a fragment needs
-	to be implemented as well */
-	size_t nblocks = (file_size + image->block_size-1) / image->block_size;
+	size_t nblocks, tail_size;
+	
+	switch(image->options.fragments) {
+		case libsqfs_fragments_never:
+			nblocks = (file_size + image->block_size-1) / image->block_size;
+			tail_size = 0;
+			break;
+		case libsqfs_fragments_always:
+			nblocks = 0;
+			tail_size = file_size;
+			/* FIXME: I don't know what is supposed to happen whene
+			someone attempts to write a "really large file" (tm)
+			this way -- the format probably does not support it, but
+			I need to take a second look */
+			if (file_size > (1<<20)) return 0;
+			break;
+		default:
+		case libsqfs_fragments_tail:
+			nblocks = file_size / image->block_size;
+			tail_size = file_size % image->block_size;
+			break;
+	}
 	
 	libsqfs_regular_inode_t reg = malloc(sizeof(*reg));
 	if (!reg) return 0;
@@ -111,6 +136,12 @@ libsqfs_regular_inode_create(libsqfs_image_t image, libsqfs_inodeattr_t attr, li
 		if (!chunk) return 0;
 		reg->blocks[n] = chunk;
 	}
+	
+	if (tail_size) {
+		reg->tail_piece = libsqfs_image_submit_fragment_piece(image, data, tail_size, reg->file_size - tail_size);
+		/* FIXME: flag error on image */
+		if (!reg->tail_piece) return 0;
+	} else reg->tail_piece = 0;
 	
 	return reg;
 }
