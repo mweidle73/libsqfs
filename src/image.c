@@ -141,10 +141,15 @@ libsqfs_image_finalize(libsqfs_image_t image)
 	
 	bool success = true;
 	
+	if (!image->root) success = false;
+	
+	success = success && libsqfs_image_flush_fragments(image);
 	libsqfs_finish_chunks(image);
 	
-	libsqfs_inode_table_layout(image, &image->inode_table);
-	libsqfs_directory_table_layout(image, &image->dir_table);
+	if (success) {
+		libsqfs_inode_table_layout(image, &image->inode_table);
+		libsqfs_directory_table_layout(image, &image->dir_table);
+	}
 	
 	success = success && libsqfs_inode_table_write(image, &image->inode_table);
 	success = success && libsqfs_directory_table_write(image, &image->dir_table);
