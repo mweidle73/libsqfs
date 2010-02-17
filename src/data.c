@@ -105,3 +105,75 @@ libsqfs_data_create_from_file(libsqfs_image_t image, const char * srcpath)
 	return (libsqfs_data_t)data;
 }
 
+typedef struct _libsqfs_memorydata {
+	const libsqfs_data_vmt * vmt;
+	libsqfs_data_t prev, next;
+	libsqfs_image_t image;
+	const void * buffer;
+	size_t size;
+	
+	void (*deleter)(void * closure);
+	void * deleter_closure;
+} libsqfs_memorydata;
+
+static libsqfs_off_t
+libsqfs_memorydata_get_size(libsqfs_data_t data)
+{
+	libsqfs_memorydata * memorydata = (libsqfs_memorydata *)data;
+	return memorydata->size;
+}
+
+static ssize_t
+libsqfs_memorydata_pread(libsqfs_data_t data, void * buffer, size_t size, libsqfs_off_t offset)
+{
+	libsqfs_memorydata * memorydata = (libsqfs_memorydata *)data;
+	if (offset > memorydata->size) return 0;
+	if (offset+size > memorydata->size) size = memorydata->size - offset;
+	memcpy(buffer, offset + (const char *)memorydata->buffer, size);
+	return size;
+}
+
+static void
+libsqfs_memorydata_destroy(libsqfs_data_t data)
+{
+	libsqfs_memorydata * memorydata = (libsqfs_memorydata *)data;
+	if (memorydata->deleter) memorydata->deleter(memorydata->deleter_closure);
+	
+	free(memorydata);
+}
+
+const libsqfs_data_vmt libsqfs_memorydata_vmt = {
+	.get_size = &libsqfs_memorydata_get_size,
+	.pread = &libsqfs_memorydata_pread,
+	.destroy = &libsqfs_memorydata_destroy
+};
+
+libsqfs_data_t
+libsqfs_data_create_for_buffer(libsqfs_image_t image, const void * buffer, size_t size, void (*deleter)(void *), void * deleter_closure)
+{
+	libsqfs_memorydata * data = malloc(sizeof(*data));
+	if (!data) return 0;
+	
+	data->buffer = buffer;
+	data->size = size;
+	data->deleter = deleter;
+	data->deleter_closure = deleter_closure;
+	
+	libsqfs_data_init(image, (libsqfs_data_t)data);
+	data->vmt = &libsqfs_memorydata_vmt;
+	
+	return (libsqfs_data_t)data;
+}
+
+libsqfs_data_t
+libsqfs_data_create_for_static_buffer(libsqfs_image_t image, const void * buffer, size_t size)
+{
+	return libsqfs_data_create_for_buffer(image, buffer, size, 0, 0);
+}
+
+libsqfs_data_t
+libsqfs_data_create_for_transferred_buffer(libsqfs_image_t image, void * buffer, size_t size)
+{
+	return libsqfs_data_create_for_buffer(image, buffer, size, free, buffer);
+}
+

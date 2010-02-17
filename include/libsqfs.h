@@ -261,6 +261,48 @@ libsqfs_data_t
 libsqfs_data_create_from_file(libsqfs_image_t image, const char * srcpath);
 
 /**
+	\brief Create file data
+	\param image @c squashfs image handle
+	\param buffer An in-memory buffer containing the data
+	\param size Size of the in-memory buffer
+	\param deleter Function to be called when the buffer is no longer needed
+	\param deleter_closure Parameter passed to @c deleter function
+	
+	Creates a handle that represents the data contained in the specified
+	buffer. When the buffer is no longer needed, the specified deleter
+	will be called to perform user-defined cleanup actions.
+*/
+libsqfs_data_t
+libsqfs_data_create_for_buffer(libsqfs_image_t image, const void * buffer, size_t size, void (*deleter)(void *), void * deleter_closure);
+
+/**
+	\brief Create file data
+	\param image @c squashfs image handle
+	\param buffer An in-memory buffer containing the data
+	\param size Size of the in-memory buffer
+	
+	Creates a handle that represents the data contained in the specified
+	buffer. The buffer is assumed to be "static", i.e. the caller is responsible
+	for cleaning it up. The only safe point in time to do that is after closing
+	the @c squashfs image handle the data element is associated with it.
+*/
+libsqfs_data_t
+libsqfs_data_create_for_static_buffer(libsqfs_image_t image, const void * buffer, size_t size);
+
+/**
+	\brief Create file data
+	\param image @c squashfs image handle
+	\param buffer An in-memory buffer containing the data
+	\param size Size of the in-memory buffer
+	
+	Creates a handle that represents the data contained in the specified
+	buffer. @c libsqfs takes ownership of the passed buffer and will
+	call @c free on the buffer when it is no longer needed.
+*/
+libsqfs_data_t
+libsqfs_data_create_for_transferred_buffer(libsqfs_image_t image, void * buffer, size_t size);
+
+/**
 	\brief Create regular ("file") inode
 	\param image @c squashfs image handle
 	\param attr Attributes
