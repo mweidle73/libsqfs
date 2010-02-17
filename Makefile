@@ -13,6 +13,7 @@ clean:
 
 include src/Makefile.sub
 include examples/Makefile.sub
+include tests/Makefile.sub
 
 all: $(LIBRARIES) $(EXECUTABLES)
 
