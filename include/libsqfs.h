@@ -47,6 +47,15 @@ libsqfs_destination_create_for_filedes(int fd);
 libsqfs_destination_t
 libsqfs_destination_create_for_file(const char * name, mode_t mode);
 
+/**
+	\brief Create NULL output
+	\return @c squashfs destination handle, or NULL on error with errno set appropriately
+	
+	Creates an output handle that simply discards all data (useful for testing).
+*/
+libsqfs_destination_t
+libsqfs_destination_create_null(void);
+
 /*@}*/
 
 /**

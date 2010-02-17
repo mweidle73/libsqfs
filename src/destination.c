@@ -114,3 +114,42 @@ libsqfs_destination_create_for_file(const char * name, mode_t mode)
 	return (libsqfs_destination_t)destination;
 }
 
+/**
+	\brief Create NULL output
+	\return @c squashfs destination handle, or NULL on error with errno set appropriately
+	
+	Creates an output handle that simply discards all data (useful for testing).
+*/
+
+static void
+libsqfs_destination_null_close(libsqfs_destination_t destination)
+{
+	free(destination);
+}
+
+static ssize_t
+libsqfs_destination_null_pwrite(libsqfs_destination_t destination, const void * buffer, size_t size, libsqfs_off_t offset)
+{
+	return size;
+}
+
+static void
+libsqfs_destination_null_truncate(libsqfs_destination_t destination, libsqfs_off_t offset)
+{
+}
+
+static const libsqfs_destination_vmt libsqfs_destination_null_vmt = {
+	.close = &libsqfs_destination_null_close,
+	.pwrite = &libsqfs_destination_null_pwrite,
+	.truncate = &libsqfs_destination_null_truncate
+};
+
+libsqfs_destination_t
+libsqfs_destination_create_null(void)
+{
+	libsqfs_destination_t dst = malloc(sizeof(*dst));
+	if (!dst) return 0;
+	dst->vmt = &libsqfs_destination_null_vmt;
+	return dst;
+}
+
