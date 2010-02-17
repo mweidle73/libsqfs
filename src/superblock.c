@@ -46,7 +46,7 @@ libsqfs_write_superblock(libsqfs_image_t image)
 	sb.inode_table_start = cpu_to_le64(image->inode_table.offset);
 	sb.directory_table_start = cpu_to_le64(image->dir_table.offset);
 	sb.fragment_table_start = cpu_to_le64(image->frag_table.offset);
-	sb.lookup_table_start = cpu_to_le64(-1 /* FIXME: no nfs export table yet */);
+	sb.lookup_table_start = cpu_to_le64(image->export_table.offset);
 	
 	ssize_t count = libsqfs_pwrite(image->dst, &sb, sizeof(sb), 0);
 	return count == sizeof(sb);

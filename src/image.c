@@ -99,6 +99,7 @@ libsqfs_image_create(libsqfs_destination_t destination, libsqfs_image_options_t 
 	libsqfs_idtable_init(&image->idtable);
 	libsqfs_directory_table_init(&image->dir_table);
 	libsqfs_fragment_table_init(&image->frag_table);
+	libsqfs_export_table_init(&image->export_table);
 	
 	libsqfs_reserve_superblock(image);
 	
@@ -165,6 +166,8 @@ libsqfs_image_finalize(libsqfs_image_t image)
 	success = success && libsqfs_inode_table_write(image, &image->inode_table);
 	success = success && libsqfs_directory_table_write(image, &image->dir_table);
 	success = success && libsqfs_fragment_table_write(image, &image->frag_table);
+	if (image->options.exportable)
+		success = success && libsqfs_export_table_write(image, &image->export_table);
 	success = success && libsqfs_idtable_write(image, &image->idtable);
 	success = success && libsqfs_write_superblock(image);
 	

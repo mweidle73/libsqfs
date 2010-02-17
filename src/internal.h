@@ -238,6 +238,18 @@ libsqfs_idtable_write(libsqfs_image_t image, libsqfs_idtable * idtable);
 int
 libsqfs_idtable_map(libsqfs_idtable * idtable, uint32_t id);
 
+/* export table */
+
+typedef struct _libsqfs_export_table {
+	libsqfs_off_t offset;
+} libsqfs_export_table;
+
+void
+libsqfs_export_table_init(libsqfs_export_table * export_tab);
+
+bool
+libsqfs_export_table_write(libsqfs_image_t image, libsqfs_export_table * export_tab);
+
 /* images */
 
 typedef struct _libsqfs_image_options libsqfs_image_options;
@@ -287,6 +299,7 @@ struct _libsqfs_image {
 	libsqfs_inode_table inode_table;
 	libsqfs_directory_table dir_table;
 	libsqfs_fragment_table frag_table;
+	libsqfs_export_table export_table;
 	
 	libsqfs_directory_inode_t root;
 };
