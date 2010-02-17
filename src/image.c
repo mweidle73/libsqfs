@@ -90,6 +90,7 @@ libsqfs_image_create(libsqfs_destination_t destination, libsqfs_image_options_t 
 	
 	libsqfs_idtable_init(&image->idtable);
 	libsqfs_directory_table_init(&image->dir_table);
+	libsqfs_fragment_table_init(&image->frag_table);
 	
 	libsqfs_reserve_superblock(image);
 	
@@ -127,6 +128,8 @@ libsqfs_image_close(libsqfs_image_t image)
 		libsqfs_inodeattr_destroy(inodeattr);
 		inodeattr = next;
 	}
+	
+	libsqfs_fragment_table_destroy(&image->frag_table);
 	
 	free(image);
 	
