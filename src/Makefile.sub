@@ -1,6 +1,6 @@
 LIBRARIES += libsqfs.a libsqfs.so
 
-LIBSQFS_SRC += src/destination.c src/image.c src/inodes.c src/superblock.c src/idtable.c src/metatable.c src/directory.c src/fragment.c src/data.c src/chunks.c src/regular.c src/export.c
+LIBSQFS_SRC += src/destination.c src/image.c src/inodes.c src/superblock.c src/idtable.c src/metatable.c src/directory.c src/fragment.c src/data.c src/chunks.c src/regular.c src/export.c src/compressor.c src/compressor_zlib.c
 
 libsqfs.a: $(patsubst %.c, %.la, $(LIBSQFS_SRC))
 libsqfs.so: $(patsubst %.c, %.lo, $(LIBSQFS_SRC))

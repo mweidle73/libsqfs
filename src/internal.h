@@ -37,7 +37,41 @@ libsqfs_data_pread(libsqfs_data_t data, void * buffer, size_t size, libsqfs_off_
 void
 libsqfs_data_destroy(libsqfs_data_t data);
 
-/* chunks. representing bulk data (either as complete blocks or fragments)
+/* compressor */
+
+typedef struct _libsqfs_compressor libsqfs_compressor;
+typedef struct _libsqfs_compressor_instance libsqfs_compressor_instance;
+
+struct _libsqfs_compressor {
+	libsqfs_compressor_instance * (*open)(void);
+	int id;
+};
+
+typedef struct _libsqfs_compressor_instance_vmt {
+	void (*destroy)(libsqfs_compressor_instance * i);
+	ssize_t (*compress)(libsqfs_compressor_instance * i,
+		void * dst, size_t dst_size, const void * src, size_t src_size);
+} libsqfs_compressor_instance_vmt;
+
+struct _libsqfs_compressor_instance {
+	const libsqfs_compressor_instance_vmt * vmt;
+};
+
+libsqfs_compressor_instance *
+libsqfs_compressor_open(const libsqfs_compressor * compr);
+
+/* transforms the given input data and returns the number of bytes of
+the output area used; if the block could not be compressed (e.g. because
+the compressed representation turns out to be larger than the provided
+buffer), (size_t)-1 is returned */
+ssize_t
+libsqfs_compressor_instance_compress(libsqfs_compressor_instance * i,
+	void * dst, size_t dst_size, const void * src, size_t src_size);
+
+void
+libsqfs_compressor_instance_destroy(libsqfs_compressor_instance * i);
+
+/* chunks, representing bulk data (either as complete blocks or fragments)
 to be written to the image */
 
 typedef enum {
