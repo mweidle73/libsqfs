@@ -51,6 +51,8 @@ libsqfs_write_metatable(libsqfs_image_t image, void * data, size_t size, bool co
 		size -= current_table_size;
 	}
 	
+	libsqfs_compressor_instance_destroy(ci);
+	
 	if (!index_tables) return tables[0];
 	
 	for(n=0; n<ntables; n++)
@@ -58,8 +60,6 @@ libsqfs_write_metatable(libsqfs_image_t image, void * data, size_t size, bool co
 	
 	libsqfs_off_t offset = libsqfs_image_reserve(image, sizeof(tables));
 	libsqfs_pwrite(image->dst, &tables, sizeof(tables), offset);
-	
-	libsqfs_compressor_instance_destroy(ci);
 	
 	return offset;
 }
