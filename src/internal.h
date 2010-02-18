@@ -301,6 +301,7 @@ struct _libsqfs_image_options {
 	bool exportable;
 	const libsqfs_compressor * compressor;
 	bool padding;
+	size_t block_size, block_size_log;
 };
 
 struct _libsqfs_image {
@@ -310,7 +311,6 @@ struct _libsqfs_image {
 	libsqfs_image_state_t state;
 	
 	uint32_t creation_time;
-	size_t block_size, block_size_log;
 	
 	struct {
 		libsqfs_data_t first, last;

@@ -115,7 +115,7 @@ libsqfs_fragment_piece *
 libsqfs_image_submit_fragment_piece(libsqfs_image_t image, libsqfs_data_t data, size_t size, libsqfs_off_t offset)
 {
 	libsqfs_fragment_table * frag_table = &image->frag_table;
-	if (frag_table->open_fragment && frag_table->open_fragment->size + size > image->block_size) {
+	if (frag_table->open_fragment && frag_table->open_fragment->size + size > image->options.block_size) {
 		bool success = libsqfs_image_flush_fragments(image);
 		if (!success) return 0;
 	}

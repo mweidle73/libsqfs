@@ -85,13 +85,13 @@ libsqfs_regular_inode_create(libsqfs_image_t image, libsqfs_inodeattr_t attr, li
 	
 	switch(image->options.fragments) {
 		case libsqfs_fragments_never:
-			nblocks = (file_size + image->block_size-1) / image->block_size;
+			nblocks = (file_size + image->options.block_size-1) / image->options.block_size;
 			tail_size = 0;
 			break;
 		case libsqfs_fragments_always:
 			nblocks = 0;
 			tail_size = file_size;
-			/* FIXME: I don't know what is supposed to happen whene
+			/* FIXME: I don't know what is supposed to happen when
 			someone attempts to write a "really large file" (tm)
 			this way -- the format probably does not support it, but
 			I need to take a second look */
@@ -99,8 +99,8 @@ libsqfs_regular_inode_create(libsqfs_image_t image, libsqfs_inodeattr_t attr, li
 			break;
 		default:
 		case libsqfs_fragments_tail:
-			nblocks = file_size / image->block_size;
-			tail_size = file_size % image->block_size;
+			nblocks = file_size / image->options.block_size;
+			tail_size = file_size % image->options.block_size;
 			break;
 	}
 	
@@ -127,9 +127,9 @@ libsqfs_regular_inode_create(libsqfs_image_t image, libsqfs_inodeattr_t attr, li
 	
 	size_t n;
 	for(n=0; n<nblocks; n++) {
-		libsqfs_off_t offset = n * (libsqfs_off_t)image->block_size;
-		size_t size = image->block_size;
-		if (file_size-offset < image->block_size) size = file_size - offset;
+		libsqfs_off_t offset = n * (libsqfs_off_t)image->options.block_size;
+		size_t size = image->options.block_size;
+		if (file_size-offset < image->options.block_size) size = file_size - offset;
 		libsqfs_chunk * chunk = libsqfs_image_submit_chunk_for_data(
 			image, data, offset, size, image->options.data_compression);
 		/* FIXME: flag error on image */

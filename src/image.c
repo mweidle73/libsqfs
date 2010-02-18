@@ -10,6 +10,8 @@ libsqfs_image_options_defaults(libsqfs_image_options_t options)
 	options->exportable = false;
 	options->compressor = &libsqfs_compressor_zlib;
 	options->padding = true;
+	options->block_size_log = 17 /* SQUASHFS_FILE_LOG */;
+	options->block_size = 1 << options->block_size_log;
 }
 
 libsqfs_image_options_t
@@ -64,6 +66,19 @@ libsqfs_image_options_set_fragment_option(libsqfs_image_options_t options, libsq
 	options->fragments = fragments;
 }
 
+void
+libsqfs_image_options_set_block_size(libsqfs_image_options_t options, size_t block_size)
+{
+	if (block_size & (block_size-1)) return;
+	if ((block_size < 4096) || (block_size > 1048576)) return;
+	
+	options->block_size = block_size;
+	options->block_size_log = 0;
+	while( (block_size >>= 1) )
+		options->block_size_log ++;
+}
+
+
 libsqfs_image_t
 libsqfs_image_create(libsqfs_destination_t destination, libsqfs_image_options_t options)
 {
@@ -78,8 +93,6 @@ libsqfs_image_create(libsqfs_destination_t destination, libsqfs_image_options_t 
 	image->dst = destination;
 	image->size = 0;
 	image->creation_time = 0;
-	image->block_size_log = 17 /* SQUASHFS_FILE_LOG */;
-	image->block_size = 1 << image->block_size_log;
 	image->state = libsqfs_image_building;
 	image->dataitems.first = image->dataitems.last = 0;
 	image->inodeattrs.first = image->inodeattrs.last = 0;

@@ -151,6 +151,17 @@ libsqfs_image_options_set_padding(libsqfs_image_options_t options, bool padding)
 void
 libsqfs_image_options_set_fragment_option(libsqfs_image_options_t options, libsqfs_fragments_option fragments);
 
+/**
+	\brief Control block size
+	\param options Handle for options
+	\param block_size Size of file data blocks
+	
+	The block size must be a power of 2 between 4096 and 1048576, any other value
+	is silently ignored.
+*/
+void
+libsqfs_image_options_set_block_size(libsqfs_image_options_t options, size_t block_size);
+
 /*@}*/
 
 /**
