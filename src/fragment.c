@@ -143,6 +143,8 @@ libsqfs_image_flush_fragments(libsqfs_image_t image)
 	frag_table->fragments.last = fragment;
 	frag_table->fragments.count ++;
 	
+	frag_table->open_fragment = 0;
+	
 	/* create data element that linearizes the individual data
 	pieces comprising the fragment */
 	libsqfs_data_piece pieces[fragment->pieces.count];
