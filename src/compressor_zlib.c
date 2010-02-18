@@ -33,6 +33,7 @@ libsqfs_compressor_instance_zlib_compress(libsqfs_compressor_instance * i,
 		written = -1;
 	else
 		written = zi->strm.total_out;
+	deflateReset(&zi->strm);
 	return written;
 }
 
@@ -50,7 +51,7 @@ libsqfs_compressor_zlib_open(void)
 	zi->vmt = &libsqfs_compressor_instance_zlib_vmt;
 	zi->strm.zalloc = Z_NULL;
 	zi->strm.zfree = Z_NULL;
-	if (deflateInit(&zi->strm, Z_DEFAULT_COMPRESSION) != Z_OK) {
+	if (deflateInit(&zi->strm, 9) != Z_OK) {
 		free(zi);
 		return 0;
 	}
