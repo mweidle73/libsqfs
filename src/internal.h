@@ -114,6 +114,9 @@ libsqfs_image_submit_chunk_for_data(libsqfs_image_t image, libsqfs_data_t data,
 void
 libsqfs_finish_chunks(libsqfs_image_t image);
 
+void
+libsqfs_chunk_destroy(libsqfs_chunk * chunk);
+
 /* inodes */
 
 struct _libsqfs_inodeattr {

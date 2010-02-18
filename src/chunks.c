@@ -204,3 +204,9 @@ libsqfs_image_submit_chunk_for_data(libsqfs_image_t image, libsqfs_data_t data,
 	
 	return chunk;
 }
+
+void
+libsqfs_chunk_destroy(libsqfs_chunk * chunk)
+{
+	free(chunk);
+}

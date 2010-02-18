@@ -150,6 +150,13 @@ libsqfs_image_close(libsqfs_image_t image)
 		inodeattr = next;
 	}
 	
+	libsqfs_chunk * chunk = image->chunks.submitted.first;
+	while(chunk) {
+		libsqfs_chunk * next = chunk->next;
+		libsqfs_chunk_destroy(chunk);
+		chunk = next;
+	}
+	
 	libsqfs_fragment_table_destroy(&image->frag_table);
 	libsqfs_idtable_destroy(&image->idtable);
 	
