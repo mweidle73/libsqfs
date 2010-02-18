@@ -151,6 +151,7 @@ libsqfs_image_close(libsqfs_image_t image)
 	}
 	
 	libsqfs_fragment_table_destroy(&image->frag_table);
+	libsqfs_idtable_destroy(&image->idtable);
 	
 	free(image);
 	

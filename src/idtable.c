@@ -38,3 +38,9 @@ libsqfs_idtable_write(libsqfs_image_t image, libsqfs_idtable * idtable)
 	return idtable->offset != -1;
 }
 
+void
+libsqfs_idtable_destroy(libsqfs_idtable * idtable)
+{
+	free(idtable->ids);
+}
+

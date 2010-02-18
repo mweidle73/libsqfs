@@ -274,6 +274,9 @@ libsqfs_idtable_init(libsqfs_idtable * idtable);
 bool
 libsqfs_idtable_write(libsqfs_image_t image, libsqfs_idtable * idtable);
 
+void
+libsqfs_idtable_destroy(libsqfs_idtable * idtable);
+
 /* returns 16-bit mapped id, or -1 on mapping failure */
 int
 libsqfs_idtable_map(libsqfs_idtable * idtable, uint32_t id);
