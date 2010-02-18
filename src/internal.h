@@ -3,13 +3,18 @@
 
 #include <libsqfs.h>
 #include <stdint.h>
+#include <string.h>
 #include <stdlib.h>
 #include <errno.h>
 #include <pthread.h>
 
-/* destinations */
+#include "squashfs_fs.h"
 
-typedef long long libsqfs_off_t;
+#include "compressor.h"
+#include "metatable.h"
+#include "inodes.h"
+
+/* destinations */
 
 ssize_t
 libsqfs_pwrite(libsqfs_destination_t destination, const void * buffer, size_t size, libsqfs_off_t offset);
@@ -36,44 +41,6 @@ libsqfs_data_pread(libsqfs_data_t data, void * buffer, size_t size, libsqfs_off_
 
 void
 libsqfs_data_destroy(libsqfs_data_t data);
-
-/* compressor */
-
-typedef struct _libsqfs_compressor libsqfs_compressor;
-
-extern const libsqfs_compressor libsqfs_compressor_zlib;
-extern const libsqfs_compressor libsqfs_compressor_null;
-
-typedef struct _libsqfs_compressor_instance libsqfs_compressor_instance;
-
-struct _libsqfs_compressor {
-	libsqfs_compressor_instance * (*open)(void);
-	int id;
-};
-
-typedef struct _libsqfs_compressor_instance_vmt {
-	void (*destroy)(libsqfs_compressor_instance * i);
-	ssize_t (*compress)(libsqfs_compressor_instance * i,
-		void * dst, size_t dst_size, const void * src, size_t src_size);
-} libsqfs_compressor_instance_vmt;
-
-struct _libsqfs_compressor_instance {
-	const libsqfs_compressor_instance_vmt * vmt;
-};
-
-libsqfs_compressor_instance *
-libsqfs_compressor_open(const libsqfs_compressor * compr);
-
-/* transforms the given input data and returns the number of bytes of
-the output area used; if the block could not be compressed (e.g. because
-the compressed representation turns out to be larger than the provided
-buffer), (size_t)-1 is returned */
-ssize_t
-libsqfs_compressor_instance_compress(libsqfs_compressor_instance * i,
-	void * dst, size_t dst_size, const void * src, size_t src_size);
-
-void
-libsqfs_compressor_instance_destroy(libsqfs_compressor_instance * i);
 
 /* chunks, representing bulk data (either as complete blocks or fragments)
 to be written to the image */
@@ -116,77 +83,6 @@ libsqfs_finish_chunks(libsqfs_image_t image);
 
 void
 libsqfs_chunk_destroy(libsqfs_chunk * chunk);
-
-/* inodes */
-
-struct _libsqfs_inodeattr {
-	libsqfs_inodeattr_t prev, next;
-	uid_t uid;
-	gid_t gid;
-	mode_t mode;
-	time_t ctime;
-	
-	uint16_t mapped_uid, mapped_gid;
-};
-
-void
-libsqfs_inodeattr_destroy(libsqfs_inodeattr_t attr);
-
-typedef struct _libsqfs_inode_vmt libsqfs_inode_vmt;
-
-struct _libsqfs_inode_vmt {
-	void (*destroy)(libsqfs_inode_t inode);
-	size_t (*encoded_size)(libsqfs_inode_t inode);
-	void (*encode)(libsqfs_inode_t inode, void * dst);
-};
-
-#define LIBSQFS_INODE_COMMON \
-	const libsqfs_inode_vmt * vmt; \
-	libsqfs_inode_t prev, next; \
-	libsqfs_image_t image; \
-	\
-	libsqfs_inodeattr_t attr; \
-	size_t nlink; \
-	\
-	size_t inode_number; \
-	long long squashfs_inode; /* this is the on-disk "inode", consisting of encoded block+offset */\
-	int encoded_type; \
-
-struct _libsqfs_inode {
-	LIBSQFS_INODE_COMMON
-};
-
-void
-libsqfs_inode_init(libsqfs_image_t image, libsqfs_inode_t inode);
-
-void
-libsqfs_inode_destroy(libsqfs_inode_t inode);
-
-typedef struct _libsqfs_directory_entry libsqfs_directory_entry;
-
-struct _libsqfs_directory_inode {
-	LIBSQFS_INODE_COMMON
-	
-	libsqfs_directory_inode_t parent;
-	struct {
-		libsqfs_directory_entry * first, * last;
-	} entries;
-	
-	libsqfs_directory_inode_t prev_dir, next_dir;
-	
-	libsqfs_off_t dir_table_offset;
-};
-
-typedef struct _libsqfs_inode_table {
-	libsqfs_off_t offset;
-	libsqfs_off_t size;
-} libsqfs_inode_table;
-
-void
-libsqfs_inode_table_layout(libsqfs_image_t image, libsqfs_inode_table * inode_table);
-
-bool
-libsqfs_inode_table_write(libsqfs_image_t image, libsqfs_inode_table * inode_table);
 
 /* directories */
 
@@ -358,9 +254,6 @@ libsqfs_write_superblock(libsqfs_image_t image);
 
 void
 libsqfs_reserve_superblock(libsqfs_image_t image);
-
-libsqfs_off_t
-libsqfs_write_metatable(libsqfs_image_t image, void * data, size_t size, bool compressed, bool index_tables);
 
 #include <endian.h>
 #if __BYTE_ORDER == __LITTLE_ENDIAN

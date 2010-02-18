@@ -1,4 +1,4 @@
-#include "internal.h"
+#include "compressor.h"
 
 libsqfs_compressor_instance *
 libsqfs_compressor_open(const libsqfs_compressor * compr)

@@ -1,5 +1,8 @@
+#include "metatable.h"
+
+#include <string.h>
+
 #include "internal.h"
-#include "squashfs_fs.h"
 
 /* FIXME: the signature of the following function is not to my liking; it should
 be split into two functions, one writing just the tables, and another adding
@@ -63,3 +66,107 @@ libsqfs_write_metatable(libsqfs_image_t image, void * data, size_t size, bool co
 	
 	return offset;
 }
+
+static void
+libsqfs_metablock_destroy(libsqfs_metablock * block)
+{
+	free(block);
+}
+
+void
+libsqfs_metatable_init(libsqfs_metatable * tab, libsqfs_compressor_instance * compressor)
+{
+	tab->first = tab->last = tab->opened_block = 0;
+	tab->opened_block_fill = 0;
+	tab->compressor = compressor;
+	tab->size = 0;
+}
+
+void
+libsqfs_metatable_destroy(libsqfs_metatable * tab)
+{
+	if (tab->opened_block)
+		libsqfs_metablock_destroy(tab->opened_block);
+	libsqfs_metablock * block = tab->first;
+	while(block) {
+		libsqfs_metablock * next = block->next;
+		libsqfs_metablock_destroy(block);
+		block = next;
+	}
+}
+
+static void
+libsqfs_metatable_flush(libsqfs_metatable * tab)
+{
+	if (!tab->opened_block) return;
+	
+	libsqfs_metablock * block = tab->opened_block;
+	tab->opened_block = 0;
+	
+	char buffer[SQUASHFS_METADATA_SIZE];
+	ssize_t compressed_size = -1;
+	
+	if (tab->compressor)
+		compressed_size = libsqfs_compressor_instance_compress(tab->compressor,
+			buffer, SQUASHFS_METADATA_SIZE, block->data, SQUASHFS_METADATA_SIZE);
+	
+	if (compressed_size != -1) {
+		memcpy(block->data, buffer, compressed_size);
+		block->size = compressed_size;
+		block->compressed = true;
+	}
+	
+	tab->size += block->size + 2;
+	block->prev = tab->last;
+	block->next = 0;
+	if (tab->last) tab->last->next = block;
+	else tab->first = block;
+	tab->last = block;
+}
+
+static libsqfs_metablock *
+libsqfs_metatable_getblock(libsqfs_metatable * tab)
+{
+	if (tab->opened_block) return tab->opened_block;
+	
+	libsqfs_metablock * block = malloc(sizeof(*block));
+	if (!block) return false;
+	
+	block->prev = block->next = 0;
+	block->size = SQUASHFS_METADATA_SIZE;
+	block->offset = tab->size;
+	memset(block->data, 0, SQUASHFS_METADATA_SIZE);
+	block->compressed = false;
+	
+	tab->opened_block = block;
+	tab->opened_block_fill = 0;
+	return block;
+}
+
+bool
+libsqfs_metatable_append(libsqfs_metatable * tab, const void * data, size_t count, 
+libsqfs_metatable_entry * pos)
+{
+	pos->block = tab->size;
+	pos->offset = tab->opened_block_fill;
+	
+	while(count) {
+		libsqfs_metablock * block = libsqfs_metatable_getblock(tab);
+		
+		if (!block) return false;
+		size_t to_copy = SQUASHFS_METADATA_SIZE - tab->opened_block_fill;
+		if (to_copy > count) to_copy = count;
+		
+		memcpy(block->data + tab->opened_block_fill, data, to_copy);
+		
+		tab->opened_block_fill += to_copy;
+		count -= to_copy;
+		data = to_copy + (char *)data;
+		
+		if (tab->opened_block_fill == SQUASHFS_METADATA_SIZE)
+			libsqfs_metatable_flush(tab);
+	}
+	
+	return true;
+}
+

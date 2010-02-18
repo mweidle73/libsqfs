@@ -4,6 +4,9 @@
 #include <stdbool.h>
 #include <sys/types.h>
 
+/** \brief Type for representing file offsets */
+typedef long long libsqfs_off_t;
+
 /**
 	\defgroup output_handler Output handler
 	
