@@ -180,6 +180,7 @@ libsqfs_directory_inode_create(libsqfs_image_t image, libsqfs_inodeattr_t attr)
 	dir->nlink = 1;
 	dir->entries.first = dir->entries.last = 0;
 	dir->encoded_type = SQUASHFS_DIR_TYPE;
+	dir->parent = 0;
 	libsqfs_inode_init(image, (libsqfs_inode_t) dir);
 	
 	dir->prev_dir = image->dir_table.dirs.last;
