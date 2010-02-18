@@ -29,7 +29,7 @@ all: $(LIBRARIES) $(EXECUTABLES)
 	rm -f $@ ; ar clqv $@ $^ ; ranlib $@
 
 %.so:
-	$(CC) -shared -o $@ $^
+	$(CC) -shared -o $@ $^ $(LDFLAGS)
 
 $(EXECUTABLES):
 	$(CC) -o $@ $^ $(LDFLAGS)

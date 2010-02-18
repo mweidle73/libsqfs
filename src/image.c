@@ -8,7 +8,7 @@ libsqfs_image_options_defaults(libsqfs_image_options_t options)
 	options->fragment_compression = false;
 	options->fragments = libsqfs_fragments_tail;
 	options->exportable = false;
-	options->compression_method = 1;
+	options->compressor = &libsqfs_compressor_zlib;
 	options->padding = true;
 }
 
@@ -80,7 +80,6 @@ libsqfs_image_create(libsqfs_destination_t destination, libsqfs_image_options_t 
 	image->creation_time = 0;
 	image->block_size_log = 17 /* SQUASHFS_FILE_LOG */;
 	image->block_size = 1 << image->block_size_log;
-	image->compression_method = 1 /* ZLIB_COMPRESSION */;
 	image->state = libsqfs_image_building;
 	image->dataitems.first = image->dataitems.last = 0;
 	image->inodeattrs.first = image->inodeattrs.last = 0;

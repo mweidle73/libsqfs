@@ -131,7 +131,7 @@ libsqfs_regular_inode_create(libsqfs_image_t image, libsqfs_inodeattr_t attr, li
 		size_t size = image->block_size;
 		if (file_size-offset < image->block_size) size = file_size - offset;
 		libsqfs_chunk * chunk = libsqfs_image_submit_chunk_for_data(
-			image, data, offset, size);
+			image, data, offset, size, image->options.data_compression);
 		/* FIXME: flag error on image */
 		if (!chunk) return 0;
 		reg->blocks[n] = chunk;

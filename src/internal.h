@@ -40,6 +40,10 @@ libsqfs_data_destroy(libsqfs_data_t data);
 /* compressor */
 
 typedef struct _libsqfs_compressor libsqfs_compressor;
+
+extern const libsqfs_compressor libsqfs_compressor_zlib;
+extern const libsqfs_compressor libsqfs_compressor_null;
+
 typedef struct _libsqfs_compressor_instance libsqfs_compressor_instance;
 
 struct _libsqfs_compressor {
@@ -86,6 +90,8 @@ struct _libsqfs_chunk {
 	libsqfs_image_t image;
 	libsqfs_chunk_state_t state;
 	
+	bool may_compress;
+	
 	libsqfs_data_piece src;
 	struct {
 		libsqfs_off_t offset;
@@ -103,7 +109,7 @@ libsqfs_image_submit_chunk(libsqfs_image_t image, libsqfs_chunk * chunk);
 
 libsqfs_chunk *
 libsqfs_image_submit_chunk_for_data(libsqfs_image_t image, libsqfs_data_t data,
-	libsqfs_off_t offset, size_t size);
+	libsqfs_off_t offset, size_t size, bool may_compress);
 
 void
 libsqfs_finish_chunks(libsqfs_image_t image);
@@ -293,7 +299,7 @@ struct _libsqfs_image_options {
 	bool fragment_compression;
 	libsqfs_fragments_option fragments;
 	bool exportable;
-	int compression_method;
+	const libsqfs_compressor * compressor;
 	bool padding;
 };
 
@@ -305,7 +311,6 @@ struct _libsqfs_image {
 	
 	uint32_t creation_time;
 	size_t block_size, block_size_log;
-	size_t compression_method;
 	
 	struct {
 		libsqfs_data_t first, last;

@@ -98,7 +98,7 @@ libsqfs_inode_table_write(libsqfs_image_t image, libsqfs_inode_table * inode_tab
 		inode = inode->next;
 	}
 	
-	libsqfs_off_t offset = libsqfs_write_metatable(image, data, inode_table->size, false, false);
+	libsqfs_off_t offset = libsqfs_write_metatable(image, data, inode_table->size, image->options.inode_compression, false);
 	
 	inode_table->offset = offset;
 	free(data);

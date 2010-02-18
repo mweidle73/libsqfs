@@ -1,4 +1,5 @@
 #include "internal.h"
+#include <string.h>
 
 /* "chunks" are the generic concept used to push "bulk" data into the final
 squashfs image. All chunks are put into the image in the exact order they
@@ -97,7 +98,7 @@ libsqfs_image_chunk_compression_done(libsqfs_image_t image, libsqfs_chunk * chun
 }
 
 static bool
-libsqfs_image_compress_chunk(libsqfs_image_t image, libsqfs_chunk * chunk)
+libsqfs_image_compress_chunk(libsqfs_image_t image, libsqfs_chunk * chunk, libsqfs_compressor_instance * ci)
 {
 	/* FIXME: should not malloc, but retrieve from a pool instead: For
 	the size of objects passed around here, malloc is very mmap-happy.
@@ -116,12 +117,23 @@ libsqfs_image_compress_chunk(libsqfs_image_t image, libsqfs_chunk * chunk)
 	chunk->dst.data = malloc(chunk->src.size);
 	if (!chunk->dst.data) return false;
 	
-	ssize_t count = libsqfs_data_pread(chunk->src.data, chunk->dst.data, chunk->src.size, chunk->src.offset);
+	char buffer[chunk->src.size];
+	
+	ssize_t count = libsqfs_data_pread(chunk->src.data, buffer, chunk->src.size, chunk->src.offset);
 	if (count != chunk->src.size) return false;
 	
-	/* currently, no compression is done, obviously */
-	chunk->dst.size = chunk->src.size;
-	chunk->dst.compressed = false;
+	ssize_t compressed = -1;
+	if (chunk->may_compress) compressed = libsqfs_compressor_instance_compress(ci,
+		chunk->dst.data, chunk->src.size, buffer, chunk->src.size);
+	
+	if (compressed != -1) {
+		chunk->dst.size = compressed;
+		chunk->dst.compressed = true;
+	} else {
+		memcpy(chunk->dst.data, buffer, chunk->src.size);
+		chunk->dst.size = chunk->src.size;
+		chunk->dst.compressed = false;
+	}
 	
 	return true;
 }
@@ -129,6 +141,9 @@ libsqfs_image_compress_chunk(libsqfs_image_t image, libsqfs_chunk * chunk)
 static void
 libsqfs_image_process_chunks_unlocked(libsqfs_image_t image)
 {
+	libsqfs_compressor_instance * ci = libsqfs_compressor_open(image->options.compressor);
+	/* FIXME: flag error and exit on failure */
+	
 	/* FIXME: need a "fast-exit-on-error" */
 	for(;;) {
 		while (!image->chunks.done && !image->chunks.next_pending)
@@ -140,12 +155,14 @@ libsqfs_image_process_chunks_unlocked(libsqfs_image_t image)
 		
 		pthread_mutex_unlock(&image->chunks.lock);
 		
-		bool success = libsqfs_image_compress_chunk(image, chunk);
+		bool success = libsqfs_image_compress_chunk(image, chunk, ci);
 		if (!success) libsqfs_image_chunk_error(image, chunk);
 		else libsqfs_image_chunk_compression_done(image, chunk);
 		
 		pthread_mutex_lock(&image->chunks.lock);
 	}
+	
+	libsqfs_compressor_instance_destroy(ci);
 }
 
 void
@@ -173,7 +190,7 @@ libsqfs_finish_chunks(libsqfs_image_t image)
 
 libsqfs_chunk *
 libsqfs_image_submit_chunk_for_data(libsqfs_image_t image, libsqfs_data_t data,
-	libsqfs_off_t offset, size_t size)
+	libsqfs_off_t offset, size_t size, bool may_compress)
 {
 	libsqfs_chunk * chunk = malloc(sizeof(*chunk));
 	if (!chunk) return 0;
@@ -181,6 +198,7 @@ libsqfs_image_submit_chunk_for_data(libsqfs_image_t image, libsqfs_data_t data,
 	chunk->src.size = size;
 	chunk->src.data = data;
 	chunk->src.offset = 0;
+	chunk->may_compress = may_compress;
 	
 	libsqfs_image_submit_chunk(image, chunk);
 	

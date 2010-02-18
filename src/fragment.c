@@ -159,7 +159,7 @@ libsqfs_image_flush_fragments(libsqfs_image_t image)
 	/* submit this as a chunk, and track the chunk so we can later
 	find out where it was written into the image */
 	libsqfs_chunk * chunk = libsqfs_image_submit_chunk_for_data(image, data,
-		0, fragment->size);
+		0, fragment->size, image->options.fragment_compression);
 	if (!chunk) return false;
 	fragment->chunk = chunk;
 	

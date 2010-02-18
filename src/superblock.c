@@ -32,7 +32,7 @@ libsqfs_write_superblock(libsqfs_image_t image)
 	sb.mkfs_time = cpu_to_le32(image->creation_time);
 	sb.block_size = cpu_to_le32(image->block_size);
 	sb.fragments = cpu_to_le32(image->frag_table.fragments.count);
-	sb.compression = cpu_to_le16(image->compression_method);
+	sb.compression = cpu_to_le16(image->options.compressor->id);
 	sb.block_log = cpu_to_le16(image->block_size_log);
 	sb.flags = cpu_to_le16(flags);
 	sb.no_ids = cpu_to_le16(image->idtable.nids);
