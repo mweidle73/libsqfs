@@ -17,6 +17,14 @@ add_file(libsqfs_image_t image, const char pathname[], libsqfs_inodeattr_t attr)
 	return file;
 }
 
+libsqfs_symlink_inode_t
+add_symlink(libsqfs_image_t image, const char pathname[], libsqfs_inodeattr_t attr)
+{
+	char target[1024];
+	readlink(pathname, target, sizeof(target)-1);
+	return libsqfs_symlink_inode_create(image, attr, target);
+}
+
 libsqfs_directory_inode_t
 add_directory(libsqfs_image_t image, const char pathname[], libsqfs_inodeattr_t attr)
 {
@@ -34,13 +42,14 @@ add_directory(libsqfs_image_t image, const char pathname[], libsqfs_inodeattr_t 
 		strncat(tmpname, entry->d_name, sizeof(tmpname));
 		
 		struct stat st;
-		stat(tmpname, &st);
-		if (!S_ISREG(st.st_mode) && !S_ISDIR(st.st_mode)) continue;
+		lstat(tmpname, &st);
+		if (!S_ISREG(st.st_mode) && !S_ISDIR(st.st_mode) && !S_ISLNK(st.st_mode)) abort();
 		
 		attr = libsqfs_inodeattr_create_simple(image, st.st_uid, st.st_gid, st.st_mode & 0777, st.st_ctime);
 		libsqfs_inode_t sub = 0;
 		if (S_ISREG(st.st_mode)) sub = libsqfs_regular_inode_downcast(add_file(image, tmpname, attr));
 		else if (S_ISDIR(st.st_mode)) sub = libsqfs_directory_inode_downcast(add_directory(image, tmpname, attr));
+		else if (S_ISLNK(st.st_mode)) sub = libsqfs_symlink_inode_downcast(add_symlink(image, tmpname, attr));
 		
 		libsqfs_directory_add_entry(dir, entry->d_name, sub);
 	}
