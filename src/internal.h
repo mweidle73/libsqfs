@@ -84,6 +84,22 @@ libsqfs_finish_chunks(libsqfs_image_t image);
 void
 libsqfs_chunk_destroy(libsqfs_chunk * chunk);
 
+/* entry function for worker threads */
+void
+libsqfs_image_process_chunks(libsqfs_image_t image);
+
+/* worker thread pool */
+
+typedef struct _libsqfs_worker_thread libsqfs_worker_thread;
+
+struct _libsqfs_worker_thread {
+	pthread_t handle;
+	libsqfs_worker_thread * next;
+};
+
+void
+libsqfs_image_waitfor_threads(libsqfs_image_t image);
+
 /* fragments */
 
 typedef struct _libsqfs_fragment_piece libsqfs_fragment_piece;
@@ -225,6 +241,8 @@ struct _libsqfs_image {
 	libsqfs_compressor_instance * compressor;
 	
 	libsqfs_directory_inode_t root;
+	
+	libsqfs_worker_thread * thread_pool;
 };
 
 /* reserve space in image */
@@ -236,6 +254,12 @@ libsqfs_write_superblock(libsqfs_image_t image);
 
 void
 libsqfs_reserve_superblock(libsqfs_image_t image);
+
+ssize_t
+libsqfs_image_spawn_threads(libsqfs_image_t image, size_t count);
+
+void
+libsqfs_threadpool_wait(libsqfs_image_t image);
 
 #include <endian.h>
 #if __BYTE_ORDER == __LITTLE_ENDIAN

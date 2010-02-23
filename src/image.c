@@ -115,6 +115,8 @@ libsqfs_image_create(libsqfs_destination_t destination, libsqfs_image_options_t 
 	
 	image->root = 0;
 	
+	image->thread_pool = 0;
+	
 	libsqfs_idtable_init(&image->idtable);
 	libsqfs_directory_table_init(&image->dir_table, image->options.inode_compression ? image->compressor : 0);
 	libsqfs_inode_table_init(&image->inode_table, image->options.inode_compression ? image->compressor : 0);
@@ -136,6 +138,8 @@ libsqfs_image_state_t
 libsqfs_image_close(libsqfs_image_t image)
 {
 	libsqfs_image_state_t state = libsqfs_image_finalize(image);
+	
+	libsqfs_image_waitfor_threads(image);
 	
 	libsqfs_data_t data = image->dataitems.first;
 	while(data) {

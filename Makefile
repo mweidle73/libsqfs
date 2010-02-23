@@ -1,6 +1,6 @@
 CFLAGS += -O2 -Wall -g
 CPPFLAGS += -g -D_GNU_SOURCE -Iinclude
-LDFLAGS += -g -lz
+LDFLAGS += -g -lz -pthread
 
 all:
 
