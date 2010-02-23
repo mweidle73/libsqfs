@@ -42,7 +42,7 @@ static bool
 need_new_dir_header(libsqfs_directory_entry * entry, libsqfs_directory_entry * reference)
 {
 	if (!reference) return true;
-	if ((entry->inode->squashfs_inode>>16) != (reference->inode->squashfs_inode>>16))
+	if ((entry->inode->inode_table_entry.block) != (reference->inode->inode_table_entry.block))
 		return true;
 	ssize_t diff = (ssize_t)entry->inode->inode_number - (ssize_t)reference->inode->inode_number;
 	if (diff<-32768 || diff>32767) return true;
@@ -94,13 +94,13 @@ libsqfs_directory_encode(libsqfs_directory_inode_t dir, void * dst)
 			entry_count_loc = &hdr->count;
 			count = 0;
 			
-			hdr->start_block = cpu_to_le32(entry->inode->squashfs_inode>>16);
+			hdr->start_block = cpu_to_le32(entry->inode->inode_table_entry.block);
 			hdr->inode_number = cpu_to_le32(entry->inode->inode_number);
 		}
 		
 		struct squashfs_dir_entry * ent = dst;
 		dst = ent + 1;
-		ent->offset = cpu_to_le16(entry->inode->squashfs_inode & 0xffff);
+		ent->offset = cpu_to_le16(entry->inode->inode_table_entry.offset);
 		ent->inode_number = cpu_to_le16(entry->inode->inode_number - reference->inode->inode_number);
 		ent->type = cpu_to_le16(entry->inode->encoded_type);
 		size_t namelen = strlen(entry->name);
@@ -130,43 +130,67 @@ libsqfs_directory_inode_destroy(libsqfs_inode_t inode)
 	free(dir);
 }
 
-static size_t
-libsqfs_directory_inode_encoded_size(libsqfs_inode_t inode)
+static bool
+libsqfs_directory_inode_encode(libsqfs_directory_inode_t dir, libsqfs_metatable * tab, libsqfs_metatable_entry * pos)
 {
-	return sizeof(struct squashfs_dir_inode_header);
-}
-
-static void
-libsqfs_directory_inode_encode(libsqfs_inode_t inode, void * dst)
-{
-	libsqfs_directory_inode_t dir = (libsqfs_directory_inode_t) inode;
-	struct squashfs_dir_inode_header * hdr = dst;
+	struct squashfs_dir_inode_header hdr;
 	
-	hdr->inode_type = cpu_to_le16(SQUASHFS_DIR_TYPE);
-	hdr->mode = cpu_to_le16(dir->attr->mode);
-	hdr->uid = cpu_to_le16(dir->attr->mapped_uid);
-	hdr->guid = cpu_to_le16(dir->attr->mapped_gid);
-	hdr->mtime = cpu_to_le32(dir->attr->ctime);
-	hdr->inode_number = cpu_to_le32(dir->inode_number);
+	/* FIXME: add support for encoding SQUASHFS_LDIR_TYPE */
+	dir->encoded_type = SQUASHFS_DIR_TYPE;
 	
-	hdr->start_block = cpu_to_le32(dir->dir_table_offset / SQUASHFS_METADATA_SIZE);
-	hdr->offset = cpu_to_le16(dir->dir_table_offset % SQUASHFS_METADATA_SIZE);
+	hdr.inode_type = cpu_to_le16(dir->encoded_type);
+	hdr.mode = cpu_to_le16(dir->attr->mode);
+	hdr.uid = cpu_to_le16(dir->attr->mapped_uid);
+	hdr.guid = cpu_to_le16(dir->attr->mapped_gid);
+	hdr.mtime = cpu_to_le32(dir->attr->ctime);
+	hdr.inode_number = cpu_to_le32(dir->inode_number);
 	
-	hdr->nlink = cpu_to_le32(dir->nlink);
+	hdr.start_block = cpu_to_le32(dir->dir_table_entry.block);
+	hdr.offset = cpu_to_le16(dir->dir_table_entry.offset);
 	
-	hdr->file_size = cpu_to_le16(libsqfs_directory_encoded_size(dir) + 3);
+	hdr.nlink = cpu_to_le32(dir->nlink);
+	
+	hdr.file_size = cpu_to_le16(libsqfs_directory_encoded_size(dir) + 3);
 	
 	if (dir->parent)
-		hdr->parent_inode = cpu_to_le32(dir->parent->inode_number);
+		hdr.parent_inode = cpu_to_le32(dir->parent->inode_number);
 	else
-		hdr->parent_inode = cpu_to_le32(dir->image->inodes.count+1);
-		/* this is the "invalid inode marker" */
+		hdr.parent_inode = cpu_to_le32(dir->image->inodes.count+1);
+	
+	return libsqfs_metatable_append(tab, &hdr, sizeof(hdr), pos);
+}
+
+static bool
+libsqfs_directory_serialize(libsqfs_inode_t inode)
+{
+	libsqfs_directory_inode_t dir = (libsqfs_directory_inode_t) inode;
+	libsqfs_image_t image = dir->image;
+	
+	/* first make sure all directory entries are serialized */
+	libsqfs_directory_entry * entry = dir->entries.first;
+	while(entry) {
+		if (!libsqfs_inode_serialize(entry->inode)) return false;
+		entry = entry->next;
+	}
+	
+	/* first, encode directory entries and write them to the
+	directory table */
+	size_t entry_list_size = libsqfs_directory_encoded_size(dir);
+	char entry_list[entry_list_size];
+	libsqfs_directory_encode(dir, entry_list);
+	if (!libsqfs_metatable_append(&image->dir_table.tab, entry_list,
+		entry_list_size, &dir->dir_table_entry)) return false;
+	
+	/* now encode the inode itself, referencing the directory table */
+	if (!libsqfs_directory_inode_encode(dir, &image->inode_table.tab, &dir->inode_table_entry))
+		return false;
+	
+	return true;
 }
 
 const libsqfs_inode_vmt libsqfs_directory_inode_vmt = {
 	.destroy = &libsqfs_directory_inode_destroy,
-	.encoded_size = &libsqfs_directory_inode_encoded_size,
-	.encode = &libsqfs_directory_inode_encode
+	.serialize = &libsqfs_directory_serialize,
 };
 
 libsqfs_directory_inode_t
@@ -179,15 +203,9 @@ libsqfs_directory_inode_create(libsqfs_image_t image, libsqfs_inodeattr_t attr)
 	dir->attr = attr;
 	dir->nlink = 1;
 	dir->entries.first = dir->entries.last = 0;
-	dir->encoded_type = SQUASHFS_DIR_TYPE;
 	dir->parent = 0;
 	libsqfs_inode_init(image, (libsqfs_inode_t) dir);
 	
-	dir->prev_dir = image->dir_table.dirs.last;
-	dir->next_dir = 0;
-	if (image->dir_table.dirs.last) image->dir_table.dirs.last->next_dir = dir;
-	else image->dir_table.dirs.first = dir;
-	image->dir_table.dirs.last = dir;
 	return dir;
 }
 
@@ -233,46 +251,25 @@ libsqfs_directory_inode_downcast(libsqfs_directory_inode_t inode)
 	return (libsqfs_inode_t) inode;
 }
 
-
 void
-libsqfs_directory_table_layout(libsqfs_image_t image, libsqfs_directory_table * dir_table)
+libsqfs_directory_table_init(libsqfs_directory_table * dir_table, libsqfs_compressor_instance * compressor)
 {
-	dir_table->size = 0;
-	libsqfs_directory_inode_t dir;
-	for(dir=image->dir_table.dirs.first; dir; dir = dir->next_dir) {
-		dir->dir_table_offset = dir_table->size;
-		dir_table->size += libsqfs_directory_encoded_size(dir);
-	}
+	libsqfs_metatable_init(&dir_table->tab, compressor);
+	dir_table->offset = -1;
 }
 
 bool
 libsqfs_directory_table_write(libsqfs_image_t image, libsqfs_directory_table * dir_table)
 {
-	if (!dir_table->size) {
-		dir_table->offset = libsqfs_image_reserve(image, 0);
-		return true;
-	}
-	
-	void * data = malloc(dir_table->size), * current = data;
-	if (!data) return false;
-	libsqfs_directory_inode_t dir;
-	for(dir=image->dir_table.dirs.first; dir; dir = dir->next_dir) {
-		libsqfs_directory_encode(dir, current);
-		
-		current = libsqfs_directory_encoded_size(dir) + (char *) current;
-	}
-	
-	libsqfs_off_t offset = libsqfs_write_metatable(image, data, dir_table->size, false, false);
-	
+	libsqfs_off_t offset = libsqfs_metatable_write(&dir_table->tab, image);
+	if (offset == -1) return false;
 	dir_table->offset = offset;
-	free(data);
-	
-	return offset != -1;
+	return true;
 }
 
 void
-libsqfs_directory_table_init(libsqfs_directory_table * dir_table)
+libsqfs_directory_table_destroy(libsqfs_directory_table * dir_table)
 {
-	dir_table->dirs.first = dir_table->dirs.last = 0;
+	libsqfs_metatable_destroy(&dir_table->tab);
 }
 

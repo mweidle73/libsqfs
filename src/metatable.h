@@ -27,6 +27,7 @@ struct _libsqfs_metablock {
 
 struct _libsqfs_metatable {
 	libsqfs_metablock * first, * last;
+	size_t nmetablocks;
 	
 	libsqfs_metablock * opened_block;
 	size_t opened_block_fill;
@@ -53,6 +54,9 @@ libsqfs_metatable_destroy(libsqfs_metatable * tab);
 bool
 libsqfs_metatable_append(libsqfs_metatable * tab, const void * data, size_t count, 
 libsqfs_metatable_entry * pos);
+
+libsqfs_off_t
+libsqfs_metatable_write(libsqfs_metatable * tab, libsqfs_image_t image);
 
 libsqfs_off_t
 libsqfs_write_metatable(libsqfs_image_t image, void * data, size_t size, bool compressed, bool index_tables);

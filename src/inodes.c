@@ -61,47 +61,39 @@ libsqfs_inode_init(libsqfs_image_t image, libsqfs_inode_t inode)
 	else image->inodes.first = inode;
 	image->inodes.last = inode;
 	
-	image->inodes.count++;
+	image->inodes.count ++;
 	inode->inode_number = image->inodes.count;
-	inode->squashfs_inode = -1;
+	inode->inode_table_entry.block = -1;
+	inode->inode_table_entry.offset = -1;
+	inode->encoded_type = 0;
 }
 
+bool
+libsqfs_inode_serialize(libsqfs_inode_t inode)
+{
+	if (inode->encoded_type != 0) return true;
+	return inode->vmt->serialize(inode);
+}
 
 void
-libsqfs_inode_table_layout(libsqfs_image_t image, libsqfs_inode_table * inode_table)
+libsqfs_inode_table_init(libsqfs_inode_table * tab, libsqfs_compressor_instance * compressor)
 {
-	libsqfs_off_t offset = 0;
-	libsqfs_inode_t inode = image->inodes.first;
-	while(inode) {
-		size_t size = inode->vmt->encoded_size(inode);
-		inode->squashfs_inode = (offset & (SQUASHFS_METADATA_SIZE-1))
-			| ((offset/SQUASHFS_METADATA_SIZE)<<16);
-		
-		offset += size;
-		inode = inode->next;
-	}
-	inode_table->size = offset;
+	libsqfs_metatable_init(&tab->tab, compressor);
+	tab->offset = -1;
+}
+
+void
+libsqfs_inode_table_destroy(libsqfs_inode_table * tab)
+{
+	libsqfs_metatable_destroy(&tab->tab);
 }
 
 bool
 libsqfs_inode_table_write(libsqfs_image_t image, libsqfs_inode_table * inode_table)
 {
-	void * data, * current;
-	data = malloc(inode_table->size);
-	if (!data) return false;
-	
-	current = data;
-	libsqfs_inode_t inode = image->inodes.first;
-	while(inode) {
-		inode->vmt->encode(inode, current);
-		current = inode->vmt->encoded_size(inode) + (char *) current;
-		inode = inode->next;
-	}
-	
-	libsqfs_off_t offset = libsqfs_write_metatable(image, data, inode_table->size, image->options.inode_compression, false);
-	
+	libsqfs_off_t offset;
+	offset = libsqfs_metatable_write(&inode_table->tab, image);
+	if (offset == -1) return false;
 	inode_table->offset = offset;
-	free(data);
-	
-	return offset != -1;
+	return true;
 }

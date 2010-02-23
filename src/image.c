@@ -3,9 +3,9 @@
 static void
 libsqfs_image_options_defaults(libsqfs_image_options_t options)
 {
-	options->inode_compression = false;
-	options->data_compression = false;
-	options->fragment_compression = false;
+	options->inode_compression = true;
+	options->data_compression = true;
+	options->fragment_compression = true;
 	options->fragments = libsqfs_fragments_tail;
 	options->exportable = false;
 	options->compressor = &libsqfs_compressor_zlib;
@@ -40,7 +40,6 @@ libsqfs_image_options_set_data_compression(libsqfs_image_options_t options, bool
 {
 	options->data_compression = compress;
 }
-
 
 void
 libsqfs_image_options_set_fragment_compression(libsqfs_image_options_t options, bool compress)
@@ -90,6 +89,14 @@ libsqfs_image_create(libsqfs_destination_t destination, libsqfs_image_options_t 
 	
 	if (options) image->options = *options;
 	else libsqfs_image_options_defaults(&image->options);
+	
+	image->compressor = libsqfs_compressor_open(image->options.compressor);
+	if (!image->compressor) {
+		free(image);
+		errno = ENOMEM;
+		return 0;
+	}
+	
 	image->dst = destination;
 	image->size = 0;
 	image->creation_time = 0;
@@ -109,7 +116,8 @@ libsqfs_image_create(libsqfs_destination_t destination, libsqfs_image_options_t 
 	image->root = 0;
 	
 	libsqfs_idtable_init(&image->idtable);
-	libsqfs_directory_table_init(&image->dir_table);
+	libsqfs_directory_table_init(&image->dir_table, image->options.inode_compression ? image->compressor : 0);
+	libsqfs_inode_table_init(&image->inode_table, image->options.inode_compression ? image->compressor : 0);
 	libsqfs_fragment_table_init(&image->frag_table);
 	libsqfs_export_table_init(&image->export_table);
 	
@@ -157,8 +165,11 @@ libsqfs_image_close(libsqfs_image_t image)
 		chunk = next;
 	}
 	
+	libsqfs_directory_table_destroy(&image->dir_table);
+	libsqfs_inode_table_destroy(&image->inode_table);
 	libsqfs_fragment_table_destroy(&image->frag_table);
 	libsqfs_idtable_destroy(&image->idtable);
+	libsqfs_compressor_instance_destroy(image->compressor);
 	
 	free(image);
 	
@@ -178,11 +189,7 @@ libsqfs_image_finalize(libsqfs_image_t image)
 	success = success && libsqfs_image_flush_fragments(image);
 	libsqfs_finish_chunks(image);
 	
-	if (success) {
-		libsqfs_inode_table_layout(image, &image->inode_table);
-		libsqfs_directory_table_layout(image, &image->dir_table);
-	}
-	
+	success = success && libsqfs_inode_serialize(libsqfs_directory_inode_downcast(image->root));
 	success = success && libsqfs_inode_table_write(image, &image->inode_table);
 	success = success && libsqfs_directory_table_write(image, &image->dir_table);
 	success = success && libsqfs_fragment_table_write(image, &image->frag_table);

@@ -77,6 +77,7 @@ void
 libsqfs_metatable_init(libsqfs_metatable * tab, libsqfs_compressor_instance * compressor)
 {
 	tab->first = tab->last = tab->opened_block = 0;
+	tab->nmetablocks = 0;
 	tab->opened_block_fill = 0;
 	tab->compressor = compressor;
 	tab->size = 0;
@@ -101,7 +102,9 @@ libsqfs_metatable_flush(libsqfs_metatable * tab)
 	if (!tab->opened_block) return;
 	
 	libsqfs_metablock * block = tab->opened_block;
+	block->size = tab->opened_block_fill;
 	tab->opened_block = 0;
+	tab->opened_block_fill = 0;
 	
 	char buffer[SQUASHFS_METADATA_SIZE];
 	ssize_t compressed_size = -1;
@@ -122,6 +125,7 @@ libsqfs_metatable_flush(libsqfs_metatable * tab)
 	if (tab->last) tab->last->next = block;
 	else tab->first = block;
 	tab->last = block;
+	tab->nmetablocks ++;
 }
 
 static libsqfs_metablock *
@@ -170,3 +174,30 @@ libsqfs_metatable_entry * pos)
 	return true;
 }
 
+libsqfs_off_t
+libsqfs_metatable_write(libsqfs_metatable * tab, libsqfs_image_t image)
+{
+	libsqfs_metatable_flush(tab);
+	
+	libsqfs_off_t start = libsqfs_image_reserve(image, tab->size);
+	libsqfs_off_t offset = start;
+	
+	libsqfs_metablock * block = tab->first;
+	while(block) {
+		/* COMPRESSED_BIT actually means "uncompressed"... */
+		uint16_t header = block->size |
+			(block->compressed ? 0: SQUASHFS_COMPRESSED_BIT);
+		header = cpu_to_le16(header);
+		
+		ssize_t written;
+		written = libsqfs_pwrite(image->dst, &header, sizeof(header), offset);
+		if (written != 2) return -1;
+		written = libsqfs_pwrite(image->dst, block->data, block->size, offset+2);
+		if (written != block->size) return -1;
+		
+		offset = offset + block->size + 2;
+		block = block->next;
+	}
+	
+	return start;
+}

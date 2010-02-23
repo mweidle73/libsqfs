@@ -14,22 +14,23 @@ struct _libsqfs_regular_inode {
 };
 
 static size_t
-libsqfs_regular_inode_encoded_size(libsqfs_inode_t inode)
+libsqfs_regular_inode_encoded_size(libsqfs_regular_inode_t reg)
 {
-	libsqfs_regular_inode_t reg = (libsqfs_regular_inode_t) inode;
-	
+	/* FIXME: sometimes need LREG_TYPE */
 	return sizeof(struct squashfs_reg_inode_header) + reg->nblocks * 4;
 }
 
 static void
-libsqfs_regular_inode_encode(libsqfs_inode_t inode, void * dst)
+libsqfs_regular_inode_encode(libsqfs_regular_inode_t reg, void * dst)
 {
-	libsqfs_regular_inode_t reg = (libsqfs_regular_inode_t) inode;
 	
 	struct squashfs_reg_inode_header * hdr = dst;
 	dst = hdr + 1;
 	
-	hdr->inode_type = cpu_to_le16(SQUASHFS_FILE_TYPE);
+	/* FIXME: sometimes need LREG_TYPE */
+	reg->encoded_type = SQUASHFS_FILE_TYPE;
+	
+	hdr->inode_type = cpu_to_le16(reg->encoded_type);
 	hdr->mode = cpu_to_le16(reg->attr->mode);
 	hdr->uid = cpu_to_le16(reg->attr->mapped_uid);
 	hdr->guid = cpu_to_le16(reg->attr->mapped_gid);
@@ -68,9 +69,22 @@ libsqfs_regular_inode_destroy(libsqfs_inode_t inode)
 	free(reg);
 }
 
+static bool
+libsqfs_regular_inode_serialize(libsqfs_inode_t inode)
+{
+	libsqfs_regular_inode_t reg = (libsqfs_regular_inode_t) inode;
+	libsqfs_image_t image = reg->image;
+	
+	size_t encoded_size = libsqfs_regular_inode_encoded_size(reg);
+	char buffer[encoded_size];
+	libsqfs_regular_inode_encode(reg, buffer);
+	
+	if (!libsqfs_metatable_append(&image->inode_table.tab, buffer, encoded_size, &reg->inode_table_entry)) return false;
+	return true;
+}
+
 static const libsqfs_inode_vmt libsqfs_regular_inode_vmt = {
-	.encoded_size = &libsqfs_regular_inode_encoded_size,
-	.encode = &libsqfs_regular_inode_encode,
+	.serialize = &libsqfs_regular_inode_serialize,
 	.destroy = &libsqfs_regular_inode_destroy
 };
 
@@ -121,8 +135,6 @@ libsqfs_regular_inode_create(libsqfs_image_t image, libsqfs_inodeattr_t attr, li
 	reg->attr = attr;
 	reg->nlink = 0;
 	reg->file_size = file_size;
-	/* FIXME: sometimes need LREG_TYPE */
-	reg->encoded_type = SQUASHFS_FILE_TYPE;
 	libsqfs_inode_init(image, (libsqfs_inode_t) reg);
 	
 	size_t n;

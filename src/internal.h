@@ -84,26 +84,6 @@ libsqfs_finish_chunks(libsqfs_image_t image);
 void
 libsqfs_chunk_destroy(libsqfs_chunk * chunk);
 
-/* directories */
-
-typedef struct _libsqfs_directory_table {
-	libsqfs_off_t offset;
-	libsqfs_off_t size;
-	
-	struct {
-		libsqfs_directory_inode_t first, last;
-	} dirs;
-} libsqfs_directory_table;
-
-void
-libsqfs_directory_table_init(libsqfs_directory_table * dir_table);
-
-void
-libsqfs_directory_table_layout(libsqfs_image_t image, libsqfs_directory_table * dir_table);
-
-bool
-libsqfs_directory_table_write(libsqfs_image_t image, libsqfs_directory_table * dir_table);
-
 /* fragments */
 
 typedef struct _libsqfs_fragment_piece libsqfs_fragment_piece;
@@ -241,6 +221,8 @@ struct _libsqfs_image {
 	libsqfs_directory_table dir_table;
 	libsqfs_fragment_table frag_table;
 	libsqfs_export_table export_table;
+	
+	libsqfs_compressor_instance * compressor;
 	
 	libsqfs_directory_inode_t root;
 };

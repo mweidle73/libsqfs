@@ -14,7 +14,7 @@ libsqfs_export_table_write(libsqfs_image_t image, libsqfs_export_table * export_
 	
 	libsqfs_inode_t inode = image->inodes.first;
 	while(inode) {
-		inode_map[inode->inode_number-1] = cpu_to_le64(inode->squashfs_inode);
+		inode_map[inode->inode_number-1] = cpu_to_le64(libsqfs_encoded_inode(inode));
 		inode = inode->next;
 	}
 	
