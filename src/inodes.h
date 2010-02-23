@@ -55,7 +55,7 @@ libsqfs_inode_destroy(libsqfs_inode_t inode);
 static inline long long
 libsqfs_encoded_inode(const libsqfs_inode_t inode)
 {
-	return inode->inode_table_entry.offset | (inode->inode_table_entry.block << 16);
+	return inode->inode_table_entry.offset | (((long long)inode->inode_table_entry.block) << 16);
 }
 
 typedef struct _libsqfs_directory_entry libsqfs_directory_entry;
