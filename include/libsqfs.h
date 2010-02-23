@@ -518,6 +518,36 @@ libsqfs_directory_inode_downcast(libsqfs_directory_inode_t inode);
 
 /*@}*/
 
+/**
+	\defgroup symlink_inodes Symlink inodes
+*/
+/*@{*/
+
+/**
+	\brief Symlink inode
+*/
+typedef struct _libsqfs_symlink_inode * libsqfs_symlink_inode_t;
+
+/**
+	\brief Create symlink inode
+	\param image @c squashfs image handle
+	\param attr Attributes
+	\param target Target of symbolic link
+	\return inode handle, or NULL on failure
+*/
+libsqfs_symlink_inode_t
+libsqfs_symlink_inode_create(libsqfs_image_t image, libsqfs_inodeattr_t attr, const char target[]);
+
+/**
+	\brief Reinterpret symlink as generic inode
+	\param inode Symlink inode
+	\return The same inode, reinterpreted as generic inode
+*/
+libsqfs_inode_t
+libsqfs_symlink_inode_downcast(libsqfs_symlink_inode_t inode);
+
+/*@}*/
+
 /*@}*/
 
 /** \addtogroup images */
