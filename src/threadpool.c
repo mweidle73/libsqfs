@@ -5,7 +5,7 @@ thread_function(void * arg)
 {
 	libsqfs_image_t image = arg;
 	
-	libsqfs_image_process_chunks(image);
+	libsqfs_image_worker_thread_function(image);
 	
 	return 0;
 }

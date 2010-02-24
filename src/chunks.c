@@ -166,7 +166,7 @@ libsqfs_image_process_chunks_unlocked(libsqfs_image_t image)
 }
 
 void
-libsqfs_image_process_chunks(libsqfs_image_t image)
+libsqfs_image_worker_thread_function(libsqfs_image_t image)
 {
 	pthread_mutex_lock(&image->chunks.lock);
 	libsqfs_image_process_chunks_unlocked(image);

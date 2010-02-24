@@ -198,6 +198,14 @@ libsqfs_image_t
 libsqfs_image_create(libsqfs_destination_t destination, libsqfs_image_options_t options);
 
 /**
+	\defgroup threads Multi-processing support
+	
+	Support for utilizing multiple processors for the tasks
+	required in image creation (reading data, compression, writing
+	data to the image).
+*/
+/*@{*/
+/**
 	\brief Spawn worker threads
 	\param image @c squashfs image handle
 	\param count Number of threads to be spawned
@@ -209,6 +217,29 @@ libsqfs_image_create(libsqfs_destination_t destination, libsqfs_image_options_t 
 */
 ssize_t
 libsqfs_image_spawn_threads(libsqfs_image_t image, size_t count);
+
+/**
+	\brief Assist in creating squashfs image
+	\param image @c squashfs image handle
+	
+	The calling thread will assist in creating the squashfs image,
+	performing compression and I/O operations on behalf of the
+	main controlling thread. The function returns as soon as
+	there is no more work to do (caused by e.g.
+	\ref libsqfs_image_finalize or \ref libsqfs_image_abort).
+	
+	This provides a mechanism for an application to utilize
+	multiple threads in creating squashfs images, but want
+	to have control over thread creation and termination.
+	
+	<B>Important</B>: The main thread <B>must not</B> call
+	\ref libsqfs_image_close before every thread has returned
+	from this call.
+*/
+void
+libsqfs_image_worker_thread_function(libsqfs_image_t image);
+
+/*@}*/
 
 /**
 	\brief Query state of @c squashfs image
