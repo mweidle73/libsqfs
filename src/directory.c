@@ -236,11 +236,22 @@ libsqfs_directory_add_entry(libsqfs_directory_inode_t parent, const char * name,
 	
 	inode->nlink++;
 	entry->inode = inode;
-	entry->prev = parent->entries.last;
-	entry->next = 0;
-	if (parent->entries.last) parent->entries.last->next = entry;
+	
+	/* file names must be kept sorted in directory listings; determine
+	position where to insert */
+	libsqfs_directory_entry * insert_before = parent->entries.first, * insert_after = 0;
+	while (insert_before && strcmp(name, insert_before->name)>0) {
+		insert_after = insert_before;
+		insert_before = insert_before->next;
+	}
+	
+	entry->prev = insert_after;
+	entry->next = insert_before;
+	
+	if (insert_after) insert_after->next = entry;
 	else parent->entries.first = entry;
-	parent->entries.last = entry;
+	if (insert_before) insert_before->prev = entry;
+	else parent->entries.last = entry;
 	
 	return true;
 }
