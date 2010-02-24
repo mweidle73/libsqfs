@@ -197,7 +197,7 @@ libsqfs_image_submit_chunk_for_data(libsqfs_image_t image, libsqfs_data_t data,
 	
 	chunk->src.size = size;
 	chunk->src.data = data;
-	chunk->src.offset = 0;
+	chunk->src.offset = offset;
 	chunk->may_compress = may_compress;
 	
 	libsqfs_image_submit_chunk(image, chunk);
