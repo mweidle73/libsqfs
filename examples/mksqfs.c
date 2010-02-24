@@ -25,35 +25,77 @@ add_symlink(libsqfs_image_t image, const char pathname[], libsqfs_inodeattr_t at
 	return libsqfs_symlink_inode_create(image, attr, target);
 }
 
+typedef struct dir_entry_name dir_entry_name;
+struct dir_entry_name {
+	dir_entry_name * prev, * next;
+	char name[PATH_MAX+1], path[PATH_MAX+1];
+	struct stat st;
+};
+
 libsqfs_directory_inode_t
 add_directory(libsqfs_image_t image, const char pathname[], libsqfs_inodeattr_t attr)
 {
 	fprintf(stderr, "Add directory %s\n", pathname);
 	libsqfs_directory_inode_t dir = libsqfs_directory_inode_create(image, attr);
+	
+	dir_entry_name * first = 0, * last = 0, *current;
+	
+	/* scan directory, sort entries, and treat files first */
 	DIR * srcdir = opendir(pathname);
 	struct dirent * entry;
 	while ( (entry = readdir(srcdir)) != 0) {
 		if (strcmp(entry->d_name, ".") == 0) continue;
 		if (strcmp(entry->d_name, "..") == 0) continue;
 		
-		char tmpname[PATH_MAX + 1];
-		strncpy(tmpname, pathname, sizeof(tmpname));
-		strncat(tmpname, "/", sizeof(tmpname));
-		strncat(tmpname, entry->d_name, sizeof(tmpname));
+		current = malloc(sizeof(*current));
+		strcpy(current->name, entry->d_name);
+		strncpy(current->path, pathname, sizeof(current->name));
+		strncat(current->path, "/", sizeof(current->name));
+		strncat(current->path, entry->d_name, sizeof(current->name));
+		lstat(current->path, &current->st);
 		
-		struct stat st;
-		lstat(tmpname, &st);
-		if (!S_ISREG(st.st_mode) && !S_ISDIR(st.st_mode) && !S_ISLNK(st.st_mode)) abort();
+		dir_entry_name * insert_before = first, * insert_after = 0;
+		while (insert_before && strcmp(current->name, insert_before->name)>0) {
+			insert_after = insert_before;
+			insert_before = insert_before->next;
+		}
 		
-		attr = libsqfs_inodeattr_create_simple(image, st.st_uid, st.st_gid, st.st_mode & 0777, st.st_ctime);
-		libsqfs_inode_t sub = 0;
-		if (S_ISREG(st.st_mode)) sub = libsqfs_regular_inode_downcast(add_file(image, tmpname, attr));
-		else if (S_ISDIR(st.st_mode)) sub = libsqfs_directory_inode_downcast(add_directory(image, tmpname, attr));
-		else if (S_ISLNK(st.st_mode)) sub = libsqfs_symlink_inode_downcast(add_symlink(image, tmpname, attr));
+		current->prev = insert_after;
+		current->next = insert_before;
 		
-		libsqfs_directory_add_entry(dir, entry->d_name, sub);
+		if (insert_after) insert_after->next = current;
+		else first = current;
+		if (insert_before) insert_before->prev = current;
+		else last = current;
 	}
+		
 	closedir(srcdir);
+	current = first;
+	while(current) {
+		if (S_ISREG(current->st.st_mode)) {
+			attr = libsqfs_inodeattr_create_simple(image, current->st.st_uid, current->st.st_gid, current->st.st_mode & 0777, current->st.st_ctime);
+			
+			libsqfs_directory_add_entry(dir, current->name, libsqfs_regular_inode_downcast(add_file(image, current->path, attr)));
+		}
+		current = current->next;
+	}
+	
+	current = first;
+	while(current) {
+		if (!S_ISREG(current->st.st_mode)) {
+			attr = libsqfs_inodeattr_create_simple(image, current->st.st_uid, current->st.st_gid, current->st.st_mode & 0777, current->st.st_ctime);
+			if (!S_ISDIR(current->st.st_mode) && !S_ISLNK(current->st.st_mode)) abort();
+			
+			libsqfs_inode_t sub = 0;
+			if (S_ISDIR(current->st.st_mode)) sub = libsqfs_directory_inode_downcast(add_directory(image, current->path, attr));
+			else if (S_ISLNK(current->st.st_mode)) sub = libsqfs_symlink_inode_downcast(add_symlink(image, current->path, attr));
+			
+			libsqfs_directory_add_entry(dir, current->name, sub);
+		}
+		dir_entry_name * next = current->next;
+		free(current);
+		current = next;
+	}
 	
 	return dir;
 }
