@@ -13,6 +13,8 @@
 #include "compressor.h"
 #include "metatable.h"
 #include "inodes.h"
+#include "chunks.h"
+#include "fragment.h"
 
 /* destinations */
 
@@ -42,48 +44,6 @@ libsqfs_data_pread(libsqfs_data_t data, void * buffer, size_t size, libsqfs_off_
 void
 libsqfs_data_destroy(libsqfs_data_t data);
 
-/* chunks, representing bulk data (either as complete blocks or fragments)
-to be written to the image */
-
-typedef enum {
-	libsqfs_chunk_pending,
-	libsqfs_chunk_compressed,
-	libsqfs_chunk_finished
-} libsqfs_chunk_state_t;
-
-typedef struct _libsqfs_chunk libsqfs_chunk;
-struct _libsqfs_chunk {
-	libsqfs_chunk * prev, * next;
-	libsqfs_image_t image;
-	libsqfs_chunk_state_t state;
-	
-	bool may_compress;
-	
-	libsqfs_data_piece src;
-	struct {
-		libsqfs_off_t offset;
-		size_t size;
-		void * data;
-		bool compressed;
-	} dst;
-};
-typedef struct _libsqfs_chunk_list {
-	libsqfs_chunk * first, * last;
-} libsqfs_chunk_list;
-
-void
-libsqfs_image_submit_chunk(libsqfs_image_t image, libsqfs_chunk * chunk);
-
-libsqfs_chunk *
-libsqfs_image_submit_chunk_for_data(libsqfs_image_t image, libsqfs_data_t data,
-	libsqfs_off_t offset, size_t size, bool may_compress);
-
-void
-libsqfs_finish_chunks(libsqfs_image_t image);
-
-void
-libsqfs_chunk_destroy(libsqfs_chunk * chunk);
-
 /* entry function for worker threads */
 void
 libsqfs_image_process_chunks(libsqfs_image_t image);
@@ -100,59 +60,8 @@ struct _libsqfs_worker_thread {
 void
 libsqfs_image_waitfor_threads(libsqfs_image_t image);
 
-/* fragments */
-
-typedef struct _libsqfs_fragment_piece libsqfs_fragment_piece;
-typedef struct _libsqfs_fragment_block libsqfs_fragment_block;
-
-/* tails of multiple files may be grouped into a single fragment block;
-a "piece" describes this composition of a fragment block of multiple
-parts, and allows files to identify "their" tail piece */
-struct _libsqfs_fragment_piece {
-	libsqfs_fragment_piece * prev, * next;
-	libsqfs_fragment_block * fragment;
-	/* placement within fragment block */
-	size_t offset;
-	
-	/* description of where source data originates from */
-	libsqfs_data_piece src;
-};
-
-struct _libsqfs_fragment_block {
-	libsqfs_fragment_block * prev, * next;
-	size_t index, size;
-	libsqfs_chunk * chunk;
-	
-	struct {
-		libsqfs_fragment_piece * first, * last;
-		size_t count;
-	} pieces;
-};
-
-typedef struct _libsqfs_fragment_table {
-	libsqfs_off_t offset;
-	struct {
-		libsqfs_fragment_block * first, * last;
-		size_t count;
-	} fragments;
-	
-	libsqfs_fragment_block * open_fragment;
-} libsqfs_fragment_table;
-
-libsqfs_fragment_piece *
-libsqfs_image_submit_fragment_piece(libsqfs_image_t image, libsqfs_data_t data, size_t size, libsqfs_off_t offset);
-
-bool
-libsqfs_image_flush_fragments(libsqfs_image_t image);
-
-void
-libsqfs_fragment_table_init(libsqfs_fragment_table * frag_table);
-
-void
-libsqfs_fragment_table_destroy(libsqfs_fragment_table * frag_table);
-
-bool
-libsqfs_fragment_table_write(libsqfs_image_t image, libsqfs_fragment_table * frag_table);
+ssize_t
+libsqfs_image_spawn_threads(libsqfs_image_t image, size_t count);
 
 /* id table  */
 
@@ -254,12 +163,6 @@ libsqfs_write_superblock(libsqfs_image_t image);
 
 void
 libsqfs_reserve_superblock(libsqfs_image_t image);
-
-ssize_t
-libsqfs_image_spawn_threads(libsqfs_image_t image, size_t count);
-
-void
-libsqfs_threadpool_wait(libsqfs_image_t image);
 
 #include <endian.h>
 #if __BYTE_ORDER == __LITTLE_ENDIAN
