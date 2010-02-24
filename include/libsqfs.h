@@ -592,6 +592,35 @@ libsqfs_symlink_inode_downcast(libsqfs_symlink_inode_t inode);
 
 /*@}*/
 
+/**
+	\defgroup device_inodes Device inodes
+*/
+/*@{*/
+
+typedef struct _libsqfs_device_inode * libsqfs_device_inode_t;
+
+/**
+	\brief Create device inode
+	\param image @c squashfs image handle
+	\param attr Attributes
+	\param type Either 'c' or 'b' to indicate char or block device
+	\param major Major device number
+	\param minor Minor device number
+	\return inode handle, or NULL on failure
+*/
+libsqfs_device_inode_t
+libsqfs_device_inode_create(libsqfs_image_t image, libsqfs_inodeattr_t attr, char type, unsigned int major, unsigned int minor);
+
+/**
+	\brief Reinterpret device as generic inode
+	\param inode Symlink inode
+	\return The same inode, reinterpreted as generic inode
+*/
+libsqfs_inode_t
+libsqfs_device_inode_downcast(libsqfs_device_inode_t inode);
+
+/*@}*/
+
 /*@}*/
 
 /** \addtogroup images */

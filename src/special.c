@@ -29,6 +29,7 @@ libsqfs_symlink_inode_serialize(libsqfs_inode_t inode)
 	hdr.guid = cpu_to_le16(lnk->attr->mapped_gid);
 	hdr.mtime = cpu_to_le32(lnk->attr->ctime);
 	hdr.inode_number = cpu_to_le32(lnk->inode_number);
+	hdr.nlink = cpu_to_le32(lnk->nlink);
 	
 	hdr.symlink_size = cpu_to_le32(namelen);
 	
@@ -75,6 +76,80 @@ libsqfs_symlink_inode_create(libsqfs_image_t image, libsqfs_inodeattr_t attr, co
 
 libsqfs_inode_t
 libsqfs_symlink_inode_downcast(libsqfs_symlink_inode_t inode)
+{
+	return (libsqfs_inode_t) inode;
+}
+
+struct _libsqfs_device_inode {
+	LIBSQFS_INODE_COMMON
+	
+	char type;
+	unsigned int major, minor;
+};
+
+static bool
+libsqfs_device_inode_serialize(libsqfs_inode_t inode)
+{
+	libsqfs_device_inode_t dev = (libsqfs_device_inode_t) inode;
+	libsqfs_image_t image = dev->image;
+	
+	struct squashfs_dev_inode_header hdr;
+	
+	if (dev->type == 'c')
+		dev->encoded_type = SQUASHFS_CHRDEV_TYPE;
+	else
+		dev->encoded_type = SQUASHFS_BLKDEV_TYPE;
+	
+	hdr.inode_type = cpu_to_le16(dev->encoded_type);
+	hdr.mode = cpu_to_le16(dev->attr->mode);
+	hdr.uid = cpu_to_le16(dev->attr->mapped_uid);
+	hdr.guid = cpu_to_le16(dev->attr->mapped_gid);
+	hdr.mtime = cpu_to_le32(dev->attr->ctime);
+	hdr.inode_number = cpu_to_le32(dev->inode_number);
+	hdr.nlink = cpu_to_le32(dev->nlink);
+	
+	hdr.rdev = cpu_to_le32(
+		(dev->major << 8) | (dev->minor & 0xff) | ((dev->minor & ~0xff) << 12)
+	);
+	
+	if (!libsqfs_metatable_append(&image->inode_table.tab, &hdr, sizeof(hdr), &dev->inode_table_entry)) return false;
+	
+	return true;
+}
+
+static void
+libsqfs_device_inode_destroy(libsqfs_inode_t inode)
+{
+	libsqfs_device_inode_t dev = (libsqfs_device_inode_t) inode;
+	free(dev);
+}
+
+static const libsqfs_inode_vmt libsqfs_device_inode_vmt = {
+	.serialize = &libsqfs_device_inode_serialize,
+	.destroy = &libsqfs_device_inode_destroy
+};
+
+libsqfs_device_inode_t
+libsqfs_device_inode_create(libsqfs_image_t image, libsqfs_inodeattr_t attr, char type, unsigned int major, unsigned int minor)
+{
+	if ((type != 'c') && (type != 'b')) return 0;
+	libsqfs_device_inode_t dev = malloc(sizeof(*dev));
+	/* FIXME: flag error on image */
+	if (!dev) return 0;
+	
+	dev->vmt = &libsqfs_device_inode_vmt;
+	dev->attr = attr;
+	dev->nlink = 0;
+	dev->major = major;
+	dev->minor = minor;
+	dev->type = type;
+	libsqfs_inode_init(image, (libsqfs_inode_t) dev);
+	
+	return dev;
+}
+
+libsqfs_inode_t
+libsqfs_device_inode_downcast(libsqfs_device_inode_t inode)
 {
 	return (libsqfs_inode_t) inode;
 }

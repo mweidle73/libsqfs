@@ -1,4 +1,4 @@
-EXAMPLES = $(patsubst %, examples/%, empty-image dir-layout simple-file mksqfs)
+EXAMPLES = $(patsubst %, examples/%, empty-image dir-layout simple-file special-files mksqfs)
 
 examples/empty-image: examples/empty-image.o libsqfs.a
 
@@ -7,5 +7,7 @@ examples/dir-layout: examples/dir-layout.o libsqfs.a
 examples/simple-file: examples/simple-file.o libsqfs.a
 
 examples/mksqfs: examples/mksqfs.o libsqfs.a
+
+examples/special-files: examples/special-files.o libsqfs.a
 
 EXECUTABLES += $(EXAMPLES)
