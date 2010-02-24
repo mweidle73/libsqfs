@@ -6,7 +6,7 @@ fragments_option_to_flag(libsqfs_fragments_option fragments)
 {
 	switch(fragments) {
 		case libsqfs_fragments_never: return 1<<SQUASHFS_NO_FRAG;
-		case libsqfs_fragments_tail: return 0;
+		case libsqfs_fragments_small: return 0;
 		case libsqfs_fragments_always: return 1<<SQUASHFS_ALWAYS_FRAG;
 	}
 	return 0;

@@ -102,17 +102,17 @@ libsqfs_regular_inode_create(libsqfs_image_t image, libsqfs_inodeattr_t attr, li
 			nblocks = (file_size + image->options.block_size-1) / image->options.block_size;
 			tail_size = 0;
 			break;
-		case libsqfs_fragments_always:
-			nblocks = 0;
-			tail_size = file_size;
-			/* FIXME: I don't know what is supposed to happen when
-			someone attempts to write a "really large file" (tm)
-			this way -- the format probably does not support it, but
-			I need to take a second look */
-			if (file_size > (1<<20)) return 0;
-			break;
 		default:
-		case libsqfs_fragments_tail:
+		case libsqfs_fragments_small:
+			if (file_size < image->options.block_size) {
+				nblocks = 0;
+				tail_size = file_size;
+			} else {
+				nblocks = (file_size + image->options.block_size-1) / image->options.block_size;
+				tail_size = 0;
+			}
+			break;
+		case libsqfs_fragments_always:
 			nblocks = file_size / image->options.block_size;
 			tail_size = file_size % image->options.block_size;
 			break;

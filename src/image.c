@@ -6,7 +6,7 @@ libsqfs_image_options_defaults(libsqfs_image_options_t options)
 	options->inode_compression = true;
 	options->data_compression = true;
 	options->fragment_compression = true;
-	options->fragments = libsqfs_fragments_tail;
+	options->fragments = libsqfs_fragments_small;
 	options->exportable = false;
 	options->compressor = &libsqfs_compressor_zlib;
 	options->padding = true;

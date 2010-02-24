@@ -76,11 +76,11 @@ libsqfs_destination_create_null(void);
 /** \brief Options controlling creation of fragment blocks */
 typedef enum {
 	/** \brief Never create fragments, store files in blocks */
-	libsqfs_fragments_never,
-	/** \brief Create fragments to group tails of multiple files together */
-	libsqfs_fragments_tail,
-	/** \brief Attempt to store files entirely in fragments */
-	libsqfs_fragments_always
+	libsqfs_fragments_never = 0,
+	/** \brief Create fragments only for small files (i.e. smaller than block size) */
+	libsqfs_fragments_small = 1,
+	/** \brief Create fragments for all files, packing tails of small and large files together */
+	libsqfs_fragments_always = 2
 } libsqfs_fragments_option;
 
 /** \brief Options influencing on-disk layout of image */
