@@ -41,9 +41,6 @@ struct _libsqfs_worker_thread {
 void
 libsqfs_image_waitfor_threads(libsqfs_image_t image);
 
-ssize_t
-libsqfs_image_spawn_threads(libsqfs_image_t image, size_t count);
-
 /* id table  */
 
 typedef struct _libsqfs_idtable libsqfs_idtable;
