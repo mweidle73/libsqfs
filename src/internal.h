@@ -15,6 +15,7 @@
 #include "inodes.h"
 #include "chunks.h"
 #include "fragment.h"
+#include "datasource.h"
 
 /* destinations */
 
@@ -23,26 +24,6 @@ libsqfs_pwrite(libsqfs_destination_t destination, const void * buffer, size_t si
 
 void
 libsqfs_truncate(libsqfs_destination_t destination, libsqfs_off_t offset);
-
-/* data source items */
-
-typedef struct _libsqfs_data_vmt libsqfs_data_vmt;
-struct _libsqfs_data {
-	const libsqfs_data_vmt * vmt;
-	libsqfs_data_t prev, next;
-	libsqfs_image_t image;
-};
-
-/* query size */
-libsqfs_off_t
-libsqfs_data_get_size(libsqfs_data_t data);
-
-/* raw read */
-ssize_t
-libsqfs_data_pread(libsqfs_data_t data, void * buffer, size_t size, libsqfs_off_t offset);
-
-void
-libsqfs_data_destroy(libsqfs_data_t data);
 
 /* entry function for worker threads */
 void
