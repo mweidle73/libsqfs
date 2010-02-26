@@ -16,6 +16,7 @@
 #include "chunks.h"
 #include "fragment.h"
 #include "datasource.h"
+#include "threadpool.h"
 
 /* destinations */
 
@@ -28,18 +29,6 @@ libsqfs_truncate(libsqfs_destination_t destination, libsqfs_off_t offset);
 /* entry function for worker threads */
 void
 libsqfs_image_process_chunks(libsqfs_image_t image);
-
-/* worker thread pool */
-
-typedef struct _libsqfs_worker_thread libsqfs_worker_thread;
-
-struct _libsqfs_worker_thread {
-	pthread_t handle;
-	libsqfs_worker_thread * next;
-};
-
-void
-libsqfs_image_waitfor_threads(libsqfs_image_t image);
 
 /* id table  */
 
