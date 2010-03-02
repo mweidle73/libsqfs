@@ -9,7 +9,7 @@ struct _libsqfs_regular_inode {
 	
 	libsqfs_off_t file_size;
 	size_t nblocks;
-	libsqfs_chunk ** blocks;
+	libsqfs_full_block ** blocks;
 	libsqfs_fragment_piece * tail_piece;
 };
 
@@ -42,7 +42,7 @@ libsqfs_regular_inode_encode(libsqfs_regular_inode_t reg, void * dst)
 	else
 		hdr->start_block = cpu_to_le32(0);
 	if (reg->tail_piece) {
-		hdr->fragment = cpu_to_le32(reg->tail_piece->fragment->index);
+		hdr->fragment = cpu_to_le32(reg->tail_piece->fragment_block->index);
 		hdr->offset = cpu_to_le32(reg->tail_piece->offset);
 	} else {
 		hdr->fragment = cpu_to_le32(-1);
@@ -142,17 +142,29 @@ libsqfs_regular_inode_create(libsqfs_image_t image, libsqfs_inodeattr_t attr, li
 		libsqfs_off_t offset = n * (libsqfs_off_t)image->options.block_size;
 		size_t size = image->options.block_size;
 		if (file_size-offset < image->options.block_size) size = file_size - offset;
-		libsqfs_chunk * chunk = libsqfs_image_submit_chunk_for_data(
-			image, data, offset, size, image->options.data_compression);
-		/* FIXME: flag error on image */
-		if (!chunk) return 0;
-		reg->blocks[n] = chunk;
+		libsqfs_data_piece p;
+		p.data = data;
+		p.size = size;
+		p.offset = offset;
+		libsqfs_full_block * block = libsqfs_bulkdata_sumbit(&image->bulkdata, p);
+		if (!block) {
+			libsqfs_image_out_of_memory(image);
+			return 0;
+		}
+		reg->blocks[n] = block;
 	}
 	
 	if (tail_size) {
-		reg->tail_piece = libsqfs_image_submit_fragment_piece(image, data, tail_size, reg->file_size - tail_size);
-		/* FIXME: flag error on image */
-		if (!reg->tail_piece) return 0;
+		libsqfs_data_piece p;
+		p.data = data;
+		p.size = tail_size;
+		p.offset = reg->file_size - tail_size;
+		reg->tail_piece = libsqfs_bulkdata_submit_fragment(&image->bulkdata, p);
+		
+		if (!reg->tail_piece) {
+			libsqfs_image_out_of_memory(image);
+			return 0;
+		}
 	} else reg->tail_piece = 0;
 	
 	return reg;

@@ -31,7 +31,7 @@ libsqfs_write_superblock(libsqfs_image_t image)
 	sb.inodes = cpu_to_le32(image->inodes.count);
 	sb.mkfs_time = cpu_to_le32(image->creation_time);
 	sb.block_size = cpu_to_le32(image->options.block_size);
-	sb.fragments = cpu_to_le32(image->frag_table.fragments.count);
+	sb.fragments = cpu_to_le32(image->bulkdata.fragment_blocks.count);
 	sb.compression = cpu_to_le16(image->options.compressor->id);
 	sb.block_log = cpu_to_le16(image->options.block_size_log);
 	sb.flags = cpu_to_le16(flags);
@@ -45,7 +45,7 @@ libsqfs_write_superblock(libsqfs_image_t image)
 	sb.xattr_table_start = cpu_to_le64(-1 /* FIXME: no xattrs yet */);
 	sb.inode_table_start = cpu_to_le64(image->inode_table.offset);
 	sb.directory_table_start = cpu_to_le64(image->dir_table.offset);
-	sb.fragment_table_start = cpu_to_le64(image->frag_table.offset);
+	sb.fragment_table_start = cpu_to_le64(image->bulkdata.frag_table_loc);
 	sb.lookup_table_start = cpu_to_le64(image->export_table.offset);
 	
 	ssize_t count = libsqfs_pwrite(image->dst, &sb, sizeof(sb), 0);

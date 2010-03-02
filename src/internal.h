@@ -13,10 +13,9 @@
 #include "compressor.h"
 #include "metatable.h"
 #include "inodes.h"
-#include "chunks.h"
-#include "fragment.h"
 #include "datasource.h"
 #include "threadpool.h"
+#include "bulkdata.h"
 
 /* destinations */
 
@@ -97,33 +96,31 @@ struct _libsqfs_image {
 		size_t count;
 	} inodes;
 	
-	struct {
-		libsqfs_chunk_list submitted;
-		libsqfs_chunk * next_pending;
-		size_t nsubmitted, ncompleted;
-		
-		bool done;
-		
-		pthread_mutex_t lock;
-		pthread_cond_t cond;
-	} chunks;
-	
+	libsqfs_bulkdata bulkdata;
 	libsqfs_idtable idtable;
 	libsqfs_inode_table inode_table;
 	libsqfs_directory_table dir_table;
-	libsqfs_fragment_table frag_table;
 	libsqfs_export_table export_table;
 	
 	libsqfs_compressor_instance * compressor;
 	
 	libsqfs_directory_inode_t root;
-	
-	libsqfs_worker_thread * thread_pool;
+	libsqfs_threadpool threadpool;
 };
 
 /* reserve space in image */
 libsqfs_off_t
 libsqfs_image_reserve(libsqfs_image_t image, size_t bytes);
+
+/* flag error state on image: some memory allocation failed; may be
+called from other threads, must be called without any locks held */
+void
+libsqfs_image_out_of_memory(libsqfs_image_t image);
+
+/* flag other error state on image, with description; may be called from
+another thread, must be called without any locks held */
+void
+libsqfs_image_flag_error(libsqfs_image_t image, const char description[]);
 
 bool
 libsqfs_write_superblock(libsqfs_image_t image);

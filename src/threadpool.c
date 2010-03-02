@@ -1,49 +1,64 @@
 #include "internal.h"
 
-static void *
-thread_function(void * arg)
-{
-	libsqfs_image_t image = arg;
+struct _libsqfs_worker_thread {
+	pthread_t handle;
+	libsqfs_worker_thread * prev, * next;
 	
-	libsqfs_image_worker_thread_function(image);
-	
-	return 0;
-}
+	libsqfs_threadpool * threadpool;
+};
 
-ssize_t
-libsqfs_image_spawn_threads(libsqfs_image_t image, size_t count)
+void
+libsqfs_threadpool_init(libsqfs_threadpool * threadpool)
 {
-	size_t spawned = 0;
-	while(spawned < count) {
-		libsqfs_worker_thread * thread = malloc(sizeof(*thread));
-		if (!thread) break;
-		
-		if (pthread_create(&thread->handle, 0, thread_function, image)) {
-			free(thread);
-			break;
-		}
-		
-		thread->next = image->thread_pool;
-		image->thread_pool = thread;
-		spawned ++;
-	}
-	
-	return spawned;
+	threadpool->threads.first = threadpool->threads.last = 0;
 }
 
 void
-libsqfs_image_waitfor_threads(libsqfs_image_t image)
+libsqfs_threadpool_fini(libsqfs_threadpool * threadpool)
 {
-	pthread_mutex_lock(&image->chunks.lock);
-	image->chunks.done = true;
-	pthread_cond_broadcast(&image->chunks.cond);
-	pthread_mutex_unlock(&image->chunks.lock);
-	while(image->thread_pool) {
-		libsqfs_worker_thread * thread = image->thread_pool;
-		image->thread_pool = thread->next;
+	libsqfs_threadpool_wait(threadpool);
+	
+	libsqfs_worker_thread * thread = threadpool->threads.first;
+	while(thread) {
+		libsqfs_worker_thread * next = thread->next;
+		free(thread);
+		thread = next;
+	}
+}
+
+bool
+libsqfs_threadpool_spawn_worker(libsqfs_threadpool * threadpool,
+	void * (*function)(void * closure),
+	void * closure)
+{
+	libsqfs_worker_thread * thread = malloc(sizeof(*thread));
+	if (!thread) return false;
+	
+	int error = pthread_create(&thread->handle, 0, function, closure);
+	if (error) {
+		free(thread);
+		return false;
+	}
+	thread->threadpool = threadpool;
+	
+	thread->prev = threadpool->threads.last;
+	thread->next = 0;
+	
+	if (threadpool->threads.last) threadpool->threads.last->next = thread;
+	else threadpool->threads.first = thread;
+	threadpool->threads.last = thread;
+	
+	return true;
+}
+
+void
+libsqfs_threadpool_wait(libsqfs_threadpool * threadpool)
+{
+	while(threadpool->threads.first) {
+		libsqfs_worker_thread * thread = threadpool->threads.first;
+		threadpool->threads.first = thread->next;
 		
 		pthread_join(thread->handle, 0);
 		free(thread);
 	}
 }
-

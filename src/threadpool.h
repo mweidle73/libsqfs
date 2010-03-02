@@ -6,13 +6,26 @@
 /* worker thread pool */
 
 typedef struct _libsqfs_worker_thread libsqfs_worker_thread;
+typedef struct _libsqfs_threadpool libsqfs_threadpool;
+typedef struct _libsqfs_workitem libsqfs_workitem;
 
-struct _libsqfs_worker_thread {
-	pthread_t handle;
-	libsqfs_worker_thread * next;
+struct _libsqfs_threadpool {
+	struct { libsqfs_worker_thread * first, * last; } threads;
 };
 
 void
-libsqfs_image_waitfor_threads(libsqfs_image_t image);
+libsqfs_threadpool_init(libsqfs_threadpool * threadpool);
+
+void
+libsqfs_threadpool_fini(libsqfs_threadpool * threadpool);
+
+bool
+libsqfs_threadpool_spawn_worker(libsqfs_threadpool * threadpool,
+	void * (*function)(void * closure),
+	void * closure);
+
+/* wait until all threads exit */
+void
+libsqfs_threadpool_wait(libsqfs_threadpool * threadpool);
 
 #endif

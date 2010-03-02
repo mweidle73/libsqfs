@@ -106,22 +106,15 @@ libsqfs_image_create(libsqfs_destination_t destination, libsqfs_image_options_t 
 	image->inodes.first = image->inodes.last = 0;
 	image->inodes.count = 0;
 	
-	image->chunks.submitted.first = image->chunks.submitted.last = 0;
-	image->chunks.next_pending = 0;
-	image->chunks.nsubmitted = image->chunks.ncompleted = 0;
-	image->chunks.done = false;
-	pthread_mutex_init(&image->chunks.lock, 0);
-	pthread_cond_init(&image->chunks.cond, 0);
-	
 	image->root = 0;
 	
-	image->thread_pool = 0;
-	
+	libsqfs_bulkdata_init(&image->bulkdata);
 	libsqfs_idtable_init(&image->idtable);
 	libsqfs_directory_table_init(&image->dir_table, image->options.inode_compression ? image->compressor : 0);
 	libsqfs_inode_table_init(&image->inode_table, image->options.inode_compression ? image->compressor : 0);
-	libsqfs_fragment_table_init(&image->frag_table);
 	libsqfs_export_table_init(&image->export_table);
+	
+	libsqfs_threadpool_init(&image->threadpool);
 	
 	libsqfs_reserve_superblock(image);
 	
@@ -139,7 +132,7 @@ libsqfs_image_close(libsqfs_image_t image)
 {
 	libsqfs_image_state_t state = libsqfs_image_finalize(image);
 	
-	libsqfs_image_waitfor_threads(image);
+	libsqfs_threadpool_fini(&image->threadpool);
 	
 	libsqfs_data_t data = image->dataitems.first;
 	while(data) {
@@ -162,16 +155,9 @@ libsqfs_image_close(libsqfs_image_t image)
 		inodeattr = next;
 	}
 	
-	libsqfs_chunk * chunk = image->chunks.submitted.first;
-	while(chunk) {
-		libsqfs_chunk * next = chunk->next;
-		libsqfs_chunk_destroy(chunk);
-		chunk = next;
-	}
-	
+	libsqfs_bulkdata_fini(&image->bulkdata);
 	libsqfs_directory_table_destroy(&image->dir_table);
 	libsqfs_inode_table_destroy(&image->inode_table);
-	libsqfs_fragment_table_destroy(&image->frag_table);
 	libsqfs_idtable_destroy(&image->idtable);
 	libsqfs_compressor_instance_destroy(image->compressor);
 	
@@ -190,13 +176,14 @@ libsqfs_image_finalize(libsqfs_image_t image)
 	
 	if (!image->root) success = false;
 	
-	success = success && libsqfs_image_flush_fragments(image);
-	libsqfs_finish_chunks(image);
+	success = success && libsqfs_bulkdata_seal(&image->bulkdata);
+	success = success && libsqfs_bulkdata_finish(&image->bulkdata, image);
 	
-	success = success && libsqfs_inode_serialize(libsqfs_directory_inode_downcast(image->root));
+	libsqfs_inode_serialize(libsqfs_directory_inode_downcast(image->root));
 	success = success && libsqfs_inode_table_write(image, &image->inode_table);
 	success = success && libsqfs_directory_table_write(image, &image->dir_table);
-	success = success && libsqfs_fragment_table_write(image, &image->frag_table);
+	
+	success = success && libsqfs_bulkdata_write_fragment_table(&image->bulkdata, image);
 	if (image->options.exportable)
 		success = success && libsqfs_export_table_write(image, &image->export_table);
 	success = success && libsqfs_idtable_write(image, &image->idtable);
@@ -237,3 +224,45 @@ libsqfs_image_reserve(libsqfs_image_t image, size_t bytes)
 	return current;
 }
 
+static void * 
+libsqfs_image_thread_function(void * arg)
+{
+	libsqfs_image_t image = arg;
+	libsqfs_compressor_instance * ci  = libsqfs_compressor_open(image->options.compressor);
+	if (!ci) {
+		libsqfs_image_out_of_memory(image);
+		return 0;
+	}
+	
+	libsqfs_bulkdata_process(&image->bulkdata, ci, image);
+	
+	libsqfs_compressor_instance_destroy(ci);
+	
+	return 0;
+}
+
+ssize_t
+libsqfs_image_spawn_threads(libsqfs_image_t image, size_t count)
+{
+	size_t spawned = 0;
+	while(spawned < count) {
+		if (!libsqfs_threadpool_spawn_worker(&image->threadpool, &libsqfs_image_thread_function, image))
+			break;
+		count--;
+		spawned ++;
+	}
+	
+	return spawned;
+}
+
+void
+libsqfs_image_out_of_memory(libsqfs_image_t image)
+{
+	/* FIXME: set error state, cancel all pending operations */
+}
+
+void
+libsqfs_image_flag_error(libsqfs_image_t image, const char description[])
+{
+	/* FIXME: set error state, cancel all pending operations */
+}
