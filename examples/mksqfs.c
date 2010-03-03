@@ -150,15 +150,15 @@ add_directory(libsqfs_image_t image, const char pathname[], libsqfs_inodeattr_t 
 int main(int argc, char ** argv)
 {
 	if (argc<3) {
-		fprintf(stderr, "Usage: %s [destination image] [source directory]\n", argv[0]);
+		fprintf(stderr, "Usage: %s [source directory] [destination image]\n", argv[0]);
 		exit(1);
 	}
-	libsqfs_destination_t dest = libsqfs_destination_create_for_file(argv[1], 0644);
+	libsqfs_destination_t dest = libsqfs_destination_create_for_file(argv[2], 0644);
 	libsqfs_image_t image = libsqfs_image_create(dest, 0);
 	libsqfs_image_auto_spawn_threads(image);
 	
 	libsqfs_inodeattr_t attr = libsqfs_inodeattr_create_simple(image, 0, 0, 0755, 0);
-	libsqfs_directory_inode_t root = add_directory(image, argv[2], attr);
+	libsqfs_directory_inode_t root = add_directory(image, argv[1], attr);
 	
 	libsqfs_image_set_root(image, root);
 	libsqfs_image_close(image);
