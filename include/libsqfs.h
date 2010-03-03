@@ -619,12 +619,12 @@ typedef struct _libsqfs_device_inode * libsqfs_device_inode_t;
 	\param image @c squashfs image handle
 	\param attr Attributes
 	\param type Either 'c' or 'b' to indicate char or block device
-	\param major Major device number
-	\param minor Minor device number
+	\param dev_major_no Major device number
+	\param dev_minorno Minor device number
 	\return inode handle, or NULL on failure
 */
 libsqfs_device_inode_t
-libsqfs_device_inode_create(libsqfs_image_t image, libsqfs_inodeattr_t attr, char type, unsigned int major, unsigned int minor);
+libsqfs_device_inode_create(libsqfs_image_t image, libsqfs_inodeattr_t attr, char type, unsigned int dev_major_no, unsigned int dev_minor_no);
 
 /**
 	\brief Reinterpret device as generic inode
