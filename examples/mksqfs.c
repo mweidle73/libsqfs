@@ -155,6 +155,7 @@ int main(int argc, char ** argv)
 	}
 	libsqfs_destination_t dest = libsqfs_destination_create_for_file(argv[1], 0644);
 	libsqfs_image_t image = libsqfs_image_create(dest, 0);
+	libsqfs_image_auto_spawn_threads(image);
 	
 	libsqfs_inodeattr_t attr = libsqfs_inodeattr_create_simple(image, 0, 0, 0755, 0);
 	libsqfs_directory_inode_t root = add_directory(image, argv[2], attr);

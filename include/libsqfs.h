@@ -219,6 +219,21 @@ ssize_t
 libsqfs_image_spawn_threads(libsqfs_image_t image, size_t count);
 
 /**
+	\brief Spawn worker threads
+	\param image @c squashfs image handle
+	\return Number of threads actually created
+	
+	Spawns a number of helper threads that will perform I/O and
+	compression. The threads will automatically be terminated as
+	soon as the image is closed. The number of threads spawned
+	depends on the number of physical CPUs found in the system
+	and/or system configuration parameters.
+*/
+ssize_t
+libsqfs_image_auto_spawn_threads(libsqfs_image_t image);
+
+
+/**
 	\brief Assist in creating squashfs image
 	\param image @c squashfs image handle
 	

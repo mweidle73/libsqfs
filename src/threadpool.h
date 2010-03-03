@@ -24,6 +24,11 @@ libsqfs_threadpool_spawn_worker(libsqfs_threadpool * threadpool,
 	void * (*function)(void * closure),
 	void * closure);
 
+size_t
+libsqfs_threadpool_auto_spawn_worker(libsqfs_threadpool * threadpool,
+	void * (*function)(void * closure),
+	void * closure);
+
 /* wait until all threads exit */
 void
 libsqfs_threadpool_wait(libsqfs_threadpool * threadpool);

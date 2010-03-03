@@ -255,6 +255,13 @@ libsqfs_image_spawn_threads(libsqfs_image_t image, size_t count)
 	return spawned;
 }
 
+ssize_t
+libsqfs_image_auto_spawn_threads(libsqfs_image_t image)
+{
+	return libsqfs_threadpool_auto_spawn_worker(&image->threadpool, libsqfs_image_thread_function, image);
+}
+
+
 void
 libsqfs_image_out_of_memory(libsqfs_image_t image)
 {

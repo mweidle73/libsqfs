@@ -1,4 +1,5 @@
 #include "internal.h"
+#include <unistd.h>
 
 struct _libsqfs_worker_thread {
 	pthread_t handle;
@@ -49,6 +50,24 @@ libsqfs_threadpool_spawn_worker(libsqfs_threadpool * threadpool,
 	threadpool->threads.last = thread;
 	
 	return true;
+}
+
+size_t
+libsqfs_threadpool_auto_spawn_worker(libsqfs_threadpool * threadpool,
+	void * (*function)(void * closure),
+	void * closure)
+{
+	unsigned long nprocs = 1;
+#ifdef _SC_NPROCESSORS_ONLN
+	nprocs = sysconf(_SC_NPROCESSORS_ONLN);
+#endif
+	size_t spawned = 0;
+	while(spawned < nprocs * 2) {
+		if (!libsqfs_threadpool_spawn_worker(threadpool, function, closure))
+			break;
+		spawned ++;
+	}
+	return spawned;
 }
 
 void
