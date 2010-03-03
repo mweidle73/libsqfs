@@ -66,6 +66,17 @@ add_symlink(libsqfs_image_t image, const char pathname[], libsqfs_inodeattr_t at
 	return libsqfs_symlink_inode_create(image, attr, target);
 }
 
+libsqfs_device_inode_t
+add_device(libsqfs_image_t image, const char pathname[], libsqfs_inodeattr_t attr)
+{
+	struct stat st;
+	lstat(pathname, &st);
+	if (S_ISCHR(st.st_mode))
+		return libsqfs_device_inode_create(image, attr, 'c', major(st.st_rdev), minor(st.st_rdev));
+	else
+		return libsqfs_device_inode_create(image, attr, 'b', major(st.st_rdev), minor(st.st_rdev));
+}
+
 typedef struct dir_entry_name dir_entry_name;
 struct dir_entry_name {
 	dir_entry_name * prev, * next;
@@ -131,11 +142,12 @@ add_directory(libsqfs_image_t image, const char pathname[], libsqfs_inodeattr_t 
 	while(current) {
 		if (!S_ISREG(current->st.st_mode)) {
 			attr = libsqfs_inodeattr_create_simple(image, current->st.st_uid, current->st.st_gid, current->st.st_mode & 0777, current->st.st_ctime);
-			if (!S_ISDIR(current->st.st_mode) && !S_ISLNK(current->st.st_mode)) abort();
+			if (!S_ISDIR(current->st.st_mode) && !S_ISLNK(current->st.st_mode) && !S_ISBLK(current->st.st_mode) && !S_ISCHR(current->st.st_mode)) abort();
 			
 			libsqfs_inode_t sub = 0;
 			if (S_ISDIR(current->st.st_mode)) sub = libsqfs_directory_inode_downcast(add_directory(image, current->path, attr));
 			else if (S_ISLNK(current->st.st_mode)) sub = libsqfs_symlink_inode_downcast(add_symlink(image, current->path, attr));
+			else if (S_ISBLK(current->st.st_mode) || S_ISCHR(current->st.st_mode)) sub = libsqfs_device_inode_downcast(add_device(image, current->path, attr));
 			
 			libsqfs_directory_add_entry(dir, current->name, sub);
 		}
