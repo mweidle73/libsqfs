@@ -68,8 +68,13 @@ struct _libsqfs_directory_inode {
 		libsqfs_directory_entry * first, * last;
 	} entries;
 	
+	size_t indexed_count;
+	libsqfs_directory_entry * first_indexed;
+	
 	/* location of entry list of this directory within directory table */
 	libsqfs_metatable_entry dir_table_entry;
+	/* size of encoded directory entry listing */
+	size_t encoded_entries_size;
 };
 
 typedef struct _libsqfs_inode_table {
