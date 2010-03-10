@@ -134,6 +134,8 @@ libsqfs_image_close(libsqfs_image_t image)
 {
 	libsqfs_image_state_t state = libsqfs_image_finalize(image);
 	
+	libsqfs_image_error_clear(image);
+	
 	libsqfs_threadpool_fini(&image->threadpool);
 	
 	libsqfs_data_t data = image->dataitems.first;
