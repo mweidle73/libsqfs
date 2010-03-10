@@ -101,6 +101,8 @@ libsqfs_image_create(libsqfs_destination_t destination, libsqfs_image_options_t 
 	image->size = 0;
 	image->creation_time = 0;
 	image->state = libsqfs_image_building;
+	image->error_msg = 0;
+	pthread_mutex_init(&image->state_mutex, 0);
 	image->dataitems.first = image->dataitems.last = 0;
 	image->inodeattrs.first = image->inodeattrs.last = 0;
 	image->inodes.first = image->inodes.last = 0;
