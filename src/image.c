@@ -208,6 +208,12 @@ libsqfs_image_finalize(libsqfs_image_t image)
 	return image->state;
 }
 
+void
+libsqfs_image_abort(libsqfs_image_t image)
+{
+	libsqfs_image_flag_error(image, "User abort", true);
+}
+
 bool
 libsqfs_image_set_root(libsqfs_image_t image, libsqfs_directory_inode_t root)
 {
@@ -273,7 +279,7 @@ static const char out_of_memory_msg[] = "Memory allocation failed";
 static void
 libsqfs_image_cancel_pending_operations(libsqfs_image_t image)
 {
-	/* FIXME: cancel pending bulkdata reading, compression and writing */
+	libsqfs_bulkdata_abort(&image->bulkdata);
 }
 
 void

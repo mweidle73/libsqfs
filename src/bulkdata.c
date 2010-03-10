@@ -11,6 +11,12 @@ libsqfs_chunk_workq_init(libsqfs_chunk_workq * workq)
 }
 
 static inline void
+libsqfs_chunk_workq_clear(libsqfs_chunk_workq * workq)
+{
+	workq->first = workq->last = 0;
+}
+
+static inline void
 libsqfs_chunk_workq_push_back(libsqfs_chunk_workq * workq, libsqfs_chunk * chunk)
 {
 	chunk->workq_prev = workq->last;
@@ -573,6 +579,7 @@ libsqfs_bulkdata_init(libsqfs_bulkdata * bd)
 	libsqfs_chunk_workq_init(&bd->writeq);
 	
 	bd->may_add_chunks = true;
+	bd->aborted = false;
 	
 	pthread_mutex_init(&bd->lock, 0);
 	pthread_cond_init(&bd->cond, 0);
@@ -663,6 +670,7 @@ libsqfs_bulkdata_process(libsqfs_bulkdata * bd, libsqfs_compressor_instance * ci
 	while(true) {
 		if (libsqfs_bulkdata_process_single_locked(bd, ci, image)) continue;
 		if (bd->chunks.finished == bd->chunks.count && !bd->may_add_chunks) break;
+		if (bd->aborted) break;
 		pthread_cond_wait(&bd->cond, &bd->lock);
 	}
 	pthread_mutex_unlock(&bd->lock);
@@ -738,6 +746,22 @@ libsqfs_bulkdata_finish(libsqfs_bulkdata * bd, libsqfs_image_t image)
 	
 	return true;
 }
+
+void
+libsqfs_bulkdata_abort(libsqfs_bulkdata * bd)
+{
+	pthread_mutex_lock(&bd->lock);
+	bd->may_add_chunks = false;
+	bd->aborted = true;
+	libsqfs_chunk_workq_clear(&bd->readq);
+	libsqfs_chunk_workq_clear(&bd->dedupq);
+	libsqfs_chunk_workq_clear(&bd->assignq);
+	libsqfs_chunk_workq_clear(&bd->compressq);
+	libsqfs_chunk_workq_clear(&bd->writeq);
+	pthread_cond_broadcast(&bd->cond);
+	pthread_mutex_unlock(&bd->lock);
+}
+
 
 /* create and write fragment table */
 bool

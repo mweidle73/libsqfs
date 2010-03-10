@@ -142,7 +142,7 @@ struct _libsqfs_bulkdata {
 	
 	/* indicates that new chunks may still be added, i.e. worker threads
 	may nwill added, i.e. the image is finished */
-	bool may_add_chunks;
+	bool may_add_chunks, aborted;
 	
 	/* lock enforcing ordered write-out of bulk data */
 	pthread_mutex_t lock;
@@ -172,6 +172,11 @@ threads will no longer wait for new data to appear; may return
 "false" if some error occured while sealing image */
 bool
 libsqfs_bulkdata_seal(libsqfs_bulkdata * bd);
+
+/* abort writing out data to the image; active threads will
+finish their current operation and then exit */
+void
+libsqfs_bulkdata_abort(libsqfs_bulkdata * bd);
 
 /* synchronously wait until all bulk data has been written; the
 calling thread actively helps in writing image */
