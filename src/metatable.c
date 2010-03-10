@@ -4,69 +4,6 @@
 
 #include "internal.h"
 
-/* FIXME: the signature of the following function is not to my liking; it should
-be split into two functions, one writing just the tables, and another adding
-the index table -- controlling this with a flag is just ugly
-
-Additionally, the function does no error checking currently */
-libsqfs_off_t
-libsqfs_write_metatable(libsqfs_image_t image, void * data, size_t size, bool compressed, bool index_tables)
-{
-	if (!size) return 0;
-	
-	libsqfs_compressor_instance * ci = libsqfs_compressor_open(image->options.compressor);
-	if (!ci) return -1;
-	
-	size_t ntables = (size + SQUASHFS_METADATA_SIZE-1) / SQUASHFS_METADATA_SIZE, n;
-	libsqfs_off_t tables[ntables];
-	
-	for(n=0; n<ntables; n++) {
-		size_t current_table_size = SQUASHFS_METADATA_SIZE;
-		if (current_table_size > size) current_table_size = size;
-		
-		char buffer[current_table_size];
-		void * ptr = data;
-		size_t storage_size = current_table_size;
-		bool compression_successful = false;
-		
-		if (compressed) {
-			ssize_t compressed_size = libsqfs_compressor_instance_compress(ci, buffer, current_table_size, data, current_table_size);
-			
-			compression_successful = (compressed_size != -1);
-			if (compression_successful) {
-				ptr = buffer;
-				storage_size = compressed_size;
-			}
-		}
-		
-		libsqfs_off_t offset = libsqfs_image_reserve(image, storage_size + 2);
-		tables[n] = offset;
-		
-		/* COMPRESSED_BIT actually means "uncompressed"... */
-		uint16_t header = current_table_size |
-			(compression_successful ? 0: SQUASHFS_COMPRESSED_BIT);
-		header = cpu_to_le16(header);
-		libsqfs_pwrite(image->dst, &header, sizeof(header), offset);
-		libsqfs_pwrite(image->dst, ptr, storage_size, offset+2);
-		
-		
-		data = current_table_size + (char *) data;
-		size -= current_table_size;
-	}
-	
-	libsqfs_compressor_instance_destroy(ci);
-	
-	if (!index_tables) return tables[0];
-	
-	for(n=0; n<ntables; n++)
-		tables[n] = cpu_to_le64(tables[n]);
-	
-	libsqfs_off_t offset = libsqfs_image_reserve(image, sizeof(tables));
-	libsqfs_pwrite(image->dst, &tables, sizeof(tables), offset);
-	
-	return offset;
-}
-
 static void
 libsqfs_metablock_destroy(libsqfs_metablock * block)
 {
@@ -81,10 +18,11 @@ libsqfs_metatable_init(libsqfs_metatable * tab, libsqfs_compressor_instance * co
 	tab->opened_block_fill = 0;
 	tab->compressor = compressor;
 	tab->size = 0;
+	tab->offset = (libsqfs_off_t) -1;
 }
 
 void
-libsqfs_metatable_destroy(libsqfs_metatable * tab)
+libsqfs_metatable_fini(libsqfs_metatable * tab)
 {
 	if (tab->opened_block)
 		libsqfs_metablock_destroy(tab->opened_block);
@@ -151,8 +89,10 @@ bool
 libsqfs_metatable_append(libsqfs_metatable * tab, const void * data, size_t count, 
 libsqfs_metatable_entry * pos)
 {
-	pos->block = tab->size;
-	pos->offset = tab->opened_block_fill;
+	if (pos) {
+		pos->block = tab->size;
+		pos->offset = tab->opened_block_fill;
+	}
 	
 	while(count) {
 		libsqfs_metablock * block = libsqfs_metatable_getblock(tab);
@@ -174,7 +114,7 @@ libsqfs_metatable_entry * pos)
 	return true;
 }
 
-libsqfs_off_t
+bool
 libsqfs_metatable_write(libsqfs_metatable * tab, libsqfs_image_t image)
 {
 	libsqfs_metatable_flush(tab);
@@ -186,18 +126,45 @@ libsqfs_metatable_write(libsqfs_metatable * tab, libsqfs_image_t image)
 	while(block) {
 		/* COMPRESSED_BIT actually means "uncompressed"... */
 		uint16_t header = block->size |
-			(block->compressed ? 0: SQUASHFS_COMPRESSED_BIT);
+			(block->compressed ? 0 : SQUASHFS_COMPRESSED_BIT);
 		header = cpu_to_le16(header);
 		
 		ssize_t written;
 		written = libsqfs_pwrite(image->dst, &header, sizeof(header), offset);
-		if (written != 2) return -1;
+		/* FIXME: flag error reason on image */
+		if (written != 2) return false;
 		written = libsqfs_pwrite(image->dst, block->data, block->size, offset+2);
-		if (written != block->size) return -1;
+		/* FIXME: flag error reason on image */
+		if (written != block->size) return false;
 		
 		offset = offset + block->size + 2;
 		block = block->next;
 	}
 	
-	return start;
+	tab->offset = start;
+	
+	return true;
+}
+
+bool
+libsqfs_metatable_write_with_index(libsqfs_metatable * tab, libsqfs_image_t image)
+{
+	if (!libsqfs_metatable_write(tab, image)) return false;
+	
+	libsqfs_off_t table_base = tab->offset;
+	uint64_t index_table[tab->nmetablocks];
+	libsqfs_off_t index_table_base = libsqfs_image_reserve(image, sizeof(index_table));
+	size_t n;
+	libsqfs_metablock * block = tab->first;
+	for(n=0; n<tab->nmetablocks; n++) {
+		index_table[n] = cpu_to_le64(table_base + block->offset);
+		block = block->next;
+	}
+	
+	ssize_t written = libsqfs_pwrite(image->dst, index_table, sizeof(index_table), index_table_base);
+	/* FIXME: flag error reason on image */
+	if (written != sizeof(index_table)) return false;
+	
+	tab->offset = index_table_base;
+	return true;
 }

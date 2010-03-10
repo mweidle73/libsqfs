@@ -110,8 +110,8 @@ libsqfs_image_create(libsqfs_destination_t destination, libsqfs_image_options_t 
 	
 	libsqfs_bulkdata_init(&image->bulkdata);
 	libsqfs_idtable_init(&image->idtable);
-	libsqfs_directory_table_init(&image->dir_table, image->options.inode_compression ? image->compressor : 0);
-	libsqfs_inode_table_init(&image->inode_table, image->options.inode_compression ? image->compressor : 0);
+	libsqfs_metatable_init(&image->dir_table, image->options.inode_compression ? image->compressor : 0);
+	libsqfs_metatable_init(&image->inode_table, image->options.inode_compression ? image->compressor : 0);
 	libsqfs_export_table_init(&image->export_table);
 	
 	libsqfs_threadpool_init(&image->threadpool);
@@ -156,8 +156,8 @@ libsqfs_image_close(libsqfs_image_t image)
 	}
 	
 	libsqfs_bulkdata_fini(&image->bulkdata);
-	libsqfs_directory_table_destroy(&image->dir_table);
-	libsqfs_inode_table_destroy(&image->inode_table);
+	libsqfs_metatable_fini(&image->dir_table);
+	libsqfs_metatable_fini(&image->inode_table);
 	libsqfs_idtable_destroy(&image->idtable);
 	libsqfs_compressor_instance_destroy(image->compressor);
 	
@@ -180,8 +180,8 @@ libsqfs_image_finalize(libsqfs_image_t image)
 	success = success && libsqfs_bulkdata_finish(&image->bulkdata, image);
 	
 	libsqfs_inode_serialize(libsqfs_directory_inode_downcast(image->root));
-	success = success && libsqfs_inode_table_write(image, &image->inode_table);
-	success = success && libsqfs_directory_table_write(image, &image->dir_table);
+	success = success && libsqfs_metatable_write(&image->inode_table, image);
+	success = success && libsqfs_metatable_write(&image->dir_table, image);
 	
 	success = success && libsqfs_bulkdata_write_fragment_table(&image->bulkdata, image);
 	if (image->options.exportable)
@@ -195,8 +195,11 @@ libsqfs_image_finalize(libsqfs_image_t image)
 			libsqfs_truncate(image->dst, padded_size);
 	}
 	
+	/* note: since previous error messages are not overwritten,
+	this will only change the error message if something went wrong
+	before without specifying on informational message */
 	if (success) image->state = libsqfs_image_finalized;
-	else image->state = libsqfs_image_fatal_error;
+	else libsqfs_image_flag_error(image, "Cannot finalize image (unknown error)", true);
 	
 	return image->state;
 }

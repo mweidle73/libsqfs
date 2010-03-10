@@ -18,7 +18,15 @@ libsqfs_export_table_write(libsqfs_image_t image, libsqfs_export_table * export_
 		inode = inode->next;
 	}
 	
-	export_tab->offset = libsqfs_write_metatable(image, inode_map, sizeof(inode_map), true, true);
+	libsqfs_metatable tab;
+	libsqfs_metatable_init(&tab, 0);
 	
-	return export_tab->offset != -1;
+	bool success = libsqfs_metatable_append(&tab, inode_map, sizeof(inode_map), 0);
+	success = success && libsqfs_metatable_write_with_index(&tab, image);
+	
+	export_tab->offset = tab.offset;
+	
+	libsqfs_metatable_fini(&tab);
+	
+	return success;
 }

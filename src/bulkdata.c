@@ -764,10 +764,17 @@ libsqfs_bulkdata_write_fragment_table(libsqfs_bulkdata * bd, libsqfs_image_t ima
 		n ++;
 	}
 	
-	bd->frag_table_loc = libsqfs_write_metatable(image, entries, sizeof(entries),
-		false, true);
+	libsqfs_metatable fragment_table;
+	libsqfs_metatable_init(&fragment_table, image->compressor);
 	
-	return bd->frag_table_loc != -1;
+	bool success = libsqfs_metatable_append(&fragment_table, entries, sizeof(entries), 0);
+	success = success && libsqfs_metatable_write_with_index(&fragment_table, image);
+	
+	bd->frag_table_loc = fragment_table.offset;
+	
+	libsqfs_metatable_fini(&fragment_table);
+	
+	return success;
 }
 
 libsqfs_full_block *

@@ -77,36 +77,8 @@ struct _libsqfs_directory_inode {
 	size_t encoded_entries_size;
 };
 
-typedef struct _libsqfs_inode_table {
-	libsqfs_metatable tab;
-	libsqfs_off_t offset;
-} libsqfs_inode_table;
-
-void
-libsqfs_inode_table_init(libsqfs_inode_table * tab, libsqfs_compressor_instance * compressor);
-
-bool
-libsqfs_inode_table_write(libsqfs_image_t image, libsqfs_inode_table * inode_table);
-
-void
-libsqfs_inode_table_destroy(libsqfs_inode_table * tab);
-
 /* recursively serialize inodes to disk */
 bool
 libsqfs_inode_serialize(libsqfs_inode_t inode);
-
-typedef struct _libsqfs_directory_table {
-	libsqfs_metatable tab;
-	libsqfs_off_t offset;
-} libsqfs_directory_table;
-
-void
-libsqfs_directory_table_init(libsqfs_directory_table * dir_table, libsqfs_compressor_instance * compressor);
-
-bool
-libsqfs_directory_table_write(libsqfs_image_t image, libsqfs_directory_table * dir_table);
-
-void
-libsqfs_directory_table_destroy(libsqfs_directory_table * dir_table);
 
 #endif

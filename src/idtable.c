@@ -33,9 +33,17 @@ libsqfs_idtable_write(libsqfs_image_t image, libsqfs_idtable * idtable)
 	for(n=0; n<idtable->nids; n++)
 		ids[n] = cpu_to_le32(idtable->ids[n]);
 	
-	idtable->offset = libsqfs_write_metatable(image, ids, sizeof(ids), false, true);
+	libsqfs_metatable tab;
+	libsqfs_metatable_init(&tab, 0);
 	
-	return idtable->offset != -1;
+	bool success = libsqfs_metatable_append(&tab, ids, sizeof(ids), 0);
+	success = success && libsqfs_metatable_write_with_index(&tab, image);
+	
+	idtable->offset = tab.offset;
+	
+	libsqfs_metatable_fini(&tab);
+	
+	return success;
 }
 
 void

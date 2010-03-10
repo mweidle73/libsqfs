@@ -74,26 +74,3 @@ libsqfs_inode_serialize(libsqfs_inode_t inode)
 	if (inode->encoded_type != 0) return true;
 	return inode->vmt->serialize(inode);
 }
-
-void
-libsqfs_inode_table_init(libsqfs_inode_table * tab, libsqfs_compressor_instance * compressor)
-{
-	libsqfs_metatable_init(&tab->tab, compressor);
-	tab->offset = -1;
-}
-
-void
-libsqfs_inode_table_destroy(libsqfs_inode_table * tab)
-{
-	libsqfs_metatable_destroy(&tab->tab);
-}
-
-bool
-libsqfs_inode_table_write(libsqfs_image_t image, libsqfs_inode_table * inode_table)
-{
-	libsqfs_off_t offset;
-	offset = libsqfs_metatable_write(&inode_table->tab, image);
-	if (offset == -1) return false;
-	inode_table->offset = offset;
-	return true;
-}

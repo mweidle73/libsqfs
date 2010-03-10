@@ -101,8 +101,8 @@ struct _libsqfs_image {
 	
 	libsqfs_bulkdata bulkdata;
 	libsqfs_idtable idtable;
-	libsqfs_inode_table inode_table;
-	libsqfs_directory_table dir_table;
+	libsqfs_metatable inode_table;
+	libsqfs_metatable dir_table;
 	libsqfs_export_table export_table;
 	
 	libsqfs_compressor_instance * compressor;

@@ -55,7 +55,7 @@ libsqfs_regular_inode_serialize(libsqfs_inode_t inode)
 			hdr.offset = cpu_to_le32(0);
 		}
 		hdr.file_size = cpu_to_le32(reg->file_size);
-		if (!libsqfs_metatable_append(&image->inode_table.tab, &hdr, sizeof(hdr), &reg->inode_table_entry))
+		if (!libsqfs_metatable_append(&image->inode_table, &hdr, sizeof(hdr), &reg->inode_table_entry))
 			return false;
 	} else {
 		struct squashfs_lreg_inode_header hdr;
@@ -81,7 +81,7 @@ libsqfs_regular_inode_serialize(libsqfs_inode_t inode)
 			hdr.offset = cpu_to_le32(0);
 		}
 		hdr.xattr = cpu_to_le32(-1);
-		if (!libsqfs_metatable_append(&image->inode_table.tab, &hdr, sizeof(hdr), &reg->inode_table_entry))
+		if (!libsqfs_metatable_append(&image->inode_table, &hdr, sizeof(hdr), &reg->inode_table_entry))
 			return false;
 	}
 	
@@ -94,8 +94,7 @@ libsqfs_regular_inode_serialize(libsqfs_inode_t inode)
 		block_info[n] = cpu_to_le32(value);
 	}
 	
-	libsqfs_metatable_entry dummy;
-	return libsqfs_metatable_append(&image->inode_table.tab, block_info, sizeof(block_info), &dummy);
+	return libsqfs_metatable_append(&image->inode_table, block_info, sizeof(block_info), 0);
 }
 
 static const libsqfs_inode_vmt libsqfs_regular_inode_vmt = {

@@ -26,15 +26,22 @@ struct _libsqfs_metablock {
 };
 
 struct _libsqfs_metatable {
+	/* list of completely filled metablocks */
 	libsqfs_metablock * first, * last;
 	size_t nmetablocks;
 	
+	/* metablock currently being filled */
 	libsqfs_metablock * opened_block;
 	size_t opened_block_fill;
 	
+	/* compressor to be used */
 	libsqfs_compressor_instance * compressor;
 	
+	/* compressed size of metablocks finished so far (total size
+	after "write" has finished) */
 	unsigned int size;
+	
+	libsqfs_off_t offset;
 };
 
 struct _libsqfs_metatable_entry {
@@ -49,16 +56,16 @@ void
 libsqfs_metatable_init(libsqfs_metatable * tab, libsqfs_compressor_instance * compressor);
 
 void
-libsqfs_metatable_destroy(libsqfs_metatable * tab);
+libsqfs_metatable_fini(libsqfs_metatable * tab);
 
 bool
 libsqfs_metatable_append(libsqfs_metatable * tab, const void * data, size_t count, 
 libsqfs_metatable_entry * pos);
 
-libsqfs_off_t
+bool
 libsqfs_metatable_write(libsqfs_metatable * tab, libsqfs_image_t image);
 
-libsqfs_off_t
-libsqfs_write_metatable(libsqfs_image_t image, void * data, size_t size, bool compressed, bool index_tables);
+bool
+libsqfs_metatable_write_with_index(libsqfs_metatable * tab, libsqfs_image_t image);
 
 #endif

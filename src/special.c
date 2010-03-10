@@ -33,9 +33,8 @@ libsqfs_symlink_inode_serialize(libsqfs_inode_t inode)
 	
 	hdr.symlink_size = cpu_to_le32(namelen);
 	
-	if (!libsqfs_metatable_append(&image->inode_table.tab, &hdr, sizeof(hdr), &lnk->inode_table_entry)) return false;
-	libsqfs_metatable_entry dummy;
-	if (!libsqfs_metatable_append(&image->inode_table.tab, lnk->name, namelen, &dummy)) return false;
+	if (!libsqfs_metatable_append(&image->inode_table, &hdr, sizeof(hdr), &lnk->inode_table_entry)) return false;
+	if (!libsqfs_metatable_append(&image->inode_table, lnk->name, namelen, 0)) return false;
 	
 	return true;
 }
@@ -115,7 +114,7 @@ libsqfs_device_inode_serialize(libsqfs_inode_t inode)
 		(dev->major << 8) | (dev->minor & 0xff) | ((dev->minor & ~0xff) << 12)
 	);
 	
-	if (!libsqfs_metatable_append(&image->inode_table.tab, &hdr, sizeof(hdr), &dev->inode_table_entry)) return false;
+	if (!libsqfs_metatable_append(&image->inode_table, &hdr, sizeof(hdr), &dev->inode_table_entry)) return false;
 	
 	return true;
 }

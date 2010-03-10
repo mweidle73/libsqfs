@@ -272,10 +272,9 @@ libsqfs_directory_inode_encode(libsqfs_directory_inode_t dir, libsqfs_metatable 
 			index.index = cpu_to_le32(entry->offset);
 			index.start_block = cpu_to_le32(entry->directory_table_entry.block);
 			index.size = cpu_to_le32(namelen-1);
-			libsqfs_metatable_entry dummy;
-			if (!libsqfs_metatable_append(tab, &index, sizeof(index), &dummy))
+			if (!libsqfs_metatable_append(tab, &index, sizeof(index), 0))
 				return false;
-			if (!libsqfs_metatable_append(tab, entry->name, namelen, &dummy))
+			if (!libsqfs_metatable_append(tab, entry->name, namelen, 0))
 				return false;
 			
 			entry = entry->next_indexed;
@@ -300,7 +299,7 @@ libsqfs_directory_serialize(libsqfs_inode_t inode)
 	
 	/* then encode directory entries and write them to the
 	directory table */
-	if (!libsqfs_directory_encode(dir, &image->dir_table.tab))
+	if (!libsqfs_directory_encode(dir, &image->dir_table))
 		return false;
 	
 	/* after encoding, the "index" contains all entries that are "indexable"
@@ -316,7 +315,7 @@ libsqfs_directory_serialize(libsqfs_inode_t inode)
 	
 	/* now encode the directory inode itself, referencing the previously
 	encoded data in the directory table */
-	if (!libsqfs_directory_inode_encode(dir, &image->inode_table.tab))
+	if (!libsqfs_directory_inode_encode(dir, &image->inode_table))
 		return false;
 	
 	return true;
@@ -403,26 +402,3 @@ libsqfs_directory_inode_downcast(libsqfs_directory_inode_t inode)
 {
 	return (libsqfs_inode_t) inode;
 }
-
-void
-libsqfs_directory_table_init(libsqfs_directory_table * dir_table, libsqfs_compressor_instance * compressor)
-{
-	libsqfs_metatable_init(&dir_table->tab, compressor);
-	dir_table->offset = -1;
-}
-
-bool
-libsqfs_directory_table_write(libsqfs_image_t image, libsqfs_directory_table * dir_table)
-{
-	libsqfs_off_t offset = libsqfs_metatable_write(&dir_table->tab, image);
-	if (offset == -1) return false;
-	dir_table->offset = offset;
-	return true;
-}
-
-void
-libsqfs_directory_table_destroy(libsqfs_directory_table * dir_table)
-{
-	libsqfs_metatable_destroy(&dir_table->tab);
-}
-
