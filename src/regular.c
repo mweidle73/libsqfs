@@ -107,7 +107,6 @@ libsqfs_regular_inode_t
 libsqfs_regular_inode_create(libsqfs_image_t image, libsqfs_inodeattr_t attr, libsqfs_data_t data)
 {
 	libsqfs_off_t file_size = libsqfs_data_get_size(data);
-	/* FIXME: flag error on image */
 	if (file_size == -1) return 0;
 	
 	size_t nblocks, tail_size;
@@ -139,7 +138,7 @@ libsqfs_regular_inode_create(libsqfs_image_t image, libsqfs_inodeattr_t attr, li
 	reg->nblocks = nblocks;
 	reg->blocks = malloc(nblocks * sizeof(reg->blocks[0]));
 	if (!reg->blocks) {
-		/* FIXME: flag error on image */
+		libsqfs_image_out_of_memory(image, false);
 		free(reg);
 		return 0;
 	}
@@ -164,7 +163,7 @@ libsqfs_regular_inode_create(libsqfs_image_t image, libsqfs_inodeattr_t attr, li
 		p.offset = offset;
 		libsqfs_full_block * block = libsqfs_bulkdata_sumbit(&image->bulkdata, p);
 		if (!block) {
-			libsqfs_image_out_of_memory(image);
+			libsqfs_image_out_of_memory(image, false);
 			return 0;
 		}
 		reg->blocks[n] = block;
@@ -178,7 +177,7 @@ libsqfs_regular_inode_create(libsqfs_image_t image, libsqfs_inodeattr_t attr, li
 		reg->tail_piece = libsqfs_bulkdata_submit_fragment(&image->bulkdata, p);
 		
 		if (!reg->tail_piece) {
-			libsqfs_image_out_of_memory(image);
+			libsqfs_image_out_of_memory(image, false);
 			return 0;
 		}
 	} else reg->tail_piece = 0;

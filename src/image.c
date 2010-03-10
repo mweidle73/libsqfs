@@ -196,7 +196,7 @@ libsqfs_image_finalize(libsqfs_image_t image)
 	}
 	
 	if (success) image->state = libsqfs_image_finalized;
-	else image->state = libsqfs_image_error;
+	else image->state = libsqfs_image_fatal_error;
 	
 	return image->state;
 }
@@ -230,7 +230,7 @@ libsqfs_image_thread_function(void * arg)
 	libsqfs_image_t image = arg;
 	libsqfs_compressor_instance * ci  = libsqfs_compressor_open(image->options.compressor);
 	if (!ci) {
-		libsqfs_image_out_of_memory(image);
+		libsqfs_image_out_of_memory(image, true);
 		return 0;
 	}
 	
@@ -261,15 +261,52 @@ libsqfs_image_auto_spawn_threads(libsqfs_image_t image)
 	return libsqfs_threadpool_auto_spawn_worker(&image->threadpool, libsqfs_image_thread_function, image);
 }
 
+static const char out_of_memory_msg[] = "Memory allocation failed";
 
-void
-libsqfs_image_out_of_memory(libsqfs_image_t image)
+static void
+libsqfs_image_cancel_pending_operations(libsqfs_image_t image)
 {
-	/* FIXME: set error state, cancel all pending operations */
+	/* FIXME: cancel pending bulkdata reading, compression and writing */
 }
 
 void
-libsqfs_image_flag_error(libsqfs_image_t image, const char description[])
+libsqfs_image_out_of_memory(libsqfs_image_t image, bool fatal)
 {
-	/* FIXME: set error state, cancel all pending operations */
+	pthread_mutex_lock(&image->state_mutex);
+	if (!image->error_msg)
+		image->error_msg = out_of_memory_msg;
+	if (fatal) image->state = libsqfs_image_fatal_error;
+	pthread_mutex_unlock(&image->state_mutex);
+	
+	if (fatal) libsqfs_image_cancel_pending_operations(image);
+}
+
+void
+libsqfs_image_flag_error(libsqfs_image_t image, const char description[], bool fatal)
+{
+	pthread_mutex_lock(&image->state_mutex);
+	if (!image->error_msg) {
+		image->error_msg = strdup(description);
+		if (!image->error_msg) image->error_msg = out_of_memory_msg;
+	}
+	if (fatal) image->state = libsqfs_image_fatal_error;
+	pthread_mutex_unlock(&image->state_mutex);
+	
+	if (fatal) libsqfs_image_cancel_pending_operations(image);
+}
+
+void
+libsqfs_image_error_clear(libsqfs_image_t image)
+{
+	pthread_mutex_lock(&image->state_mutex);
+	if (image->error_msg && image->error_msg != out_of_memory_msg)
+		free((char *)image->error_msg);
+	image->error_msg = 0;
+	pthread_mutex_unlock(&image->state_mutex);
+}
+
+const char *
+libsqfs_image_error_message(libsqfs_image_t image)
+{
+	return image->error_msg;
 }

@@ -1,5 +1,6 @@
 #include "internal.h"
 #include <string.h>
+#include <stdio.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/stat.h>
@@ -7,6 +8,7 @@
 struct _libsqfs_data_vmt {
 	libsqfs_off_t (*get_size)(libsqfs_data_t data);
 	ssize_t (*pread)(libsqfs_data_t data, void * buffer, size_t size, libsqfs_off_t offset);
+	const char * (*describe)(libsqfs_data_t data);
 	void (*destroy)(libsqfs_data_t data);
 };
 
@@ -22,10 +24,27 @@ libsqfs_data_pread(libsqfs_data_t data, void * buffer, size_t size, libsqfs_off_
 	return data->vmt->pread(data, buffer, size, offset);
 }
 
+const char *
+libsqfs_data_describe(libsqfs_data_t data)
+{
+	return data->vmt->describe(data);
+}
+
 void
 libsqfs_data_destroy(libsqfs_data_t data)
 {
 	data->vmt->destroy(data);
+}
+
+static void
+libsqfs_data_init(libsqfs_image_t image, libsqfs_data_t data)
+{
+	data->image = image;
+	data->prev = image->dataitems.last;
+	data->next = 0;
+	if (image->dataitems.last) image->dataitems.last->next = data;
+	else image->dataitems.first = data;
+	image->dataitems.last = data;
 }
 
 typedef struct _libsqfs_filedata {
@@ -40,8 +59,14 @@ libsqfs_filedata_get_size(libsqfs_data_t data)
 {
 	libsqfs_filedata * filedata = (libsqfs_filedata *)data;
 	struct stat64 st;
-	int error=stat64(filedata->pathname, &st);
-	if (error) return -1;
+	int error = stat64(filedata->pathname, &st);
+	if (error) {
+		char errormsg[1024];
+		snprintf(errormsg, sizeof(errormsg), "Unable to stat file %s: %s",
+			filedata->pathname, strerror(errno));
+		libsqfs_image_flag_error(data->image, errormsg, false);
+		return -1;
+	}
 	else return st.st_size;
 }
 
@@ -55,9 +80,23 @@ libsqfs_filedata_pread(libsqfs_data_t data, void * buffer, size_t size, libsqfs_
 	if (fd<0) return -1;
 	
 	ssize_t count = pread64(fd, buffer, size, offset);
+	if (count != size) {
+		/* "close" might conceivably change errno, so preserve it */
+		int saved_errno = errno;
+		close(fd);
+		errno = saved_errno;
+		return count;
+	}
 	close(fd);
 	
 	return count;
+}
+
+static const char *
+libsqfs_filedata_describe(libsqfs_data_t data)
+{
+	libsqfs_filedata * filedata = (libsqfs_filedata *)data;
+	return filedata->pathname;
 }
 
 static void
@@ -71,19 +110,9 @@ libsqfs_filedata_destroy(libsqfs_data_t data)
 const libsqfs_data_vmt libsqfs_filedata_vmt = {
 	.get_size = &libsqfs_filedata_get_size,
 	.pread = &libsqfs_filedata_pread,
+	.describe = &libsqfs_filedata_describe,
 	.destroy = &libsqfs_filedata_destroy
 };
-
-static void
-libsqfs_data_init(libsqfs_image_t image, libsqfs_data_t data)
-{
-	data->image = image;
-	data->prev = image->dataitems.last;
-	data->next = 0;
-	if (image->dataitems.last) image->dataitems.last->next = data;
-	else image->dataitems.first = data;
-	image->dataitems.last = data;
-}
 
 libsqfs_data_t
 libsqfs_data_create_from_file(libsqfs_image_t image, const char * srcpath)
@@ -93,7 +122,7 @@ libsqfs_data_create_from_file(libsqfs_image_t image, const char * srcpath)
 	
 	data->pathname = strdup(srcpath);
 	if (!data->pathname) {
-		/* FIXME: flag error on image */
+		libsqfs_image_out_of_memory(image, false);
 		free(data);
 		return 0;
 	}
@@ -133,6 +162,12 @@ libsqfs_memorydata_pread(libsqfs_data_t data, void * buffer, size_t size, libsqf
 	return size;
 }
 
+static const char *
+libsqfs_memorydata_describe(libsqfs_data_t data)
+{
+	return "<memory-block>";
+}
+
 static void
 libsqfs_memorydata_destroy(libsqfs_data_t data)
 {
@@ -145,6 +180,7 @@ libsqfs_memorydata_destroy(libsqfs_data_t data)
 const libsqfs_data_vmt libsqfs_memorydata_vmt = {
 	.get_size = &libsqfs_memorydata_get_size,
 	.pread = &libsqfs_memorydata_pread,
+	.describe = &libsqfs_memorydata_describe,
 	.destroy = &libsqfs_memorydata_destroy
 };
 
@@ -231,6 +267,13 @@ libsqfs_compounddata_pread(libsqfs_data_t data, void * buffer, size_t size, libs
 	return written;
 }
 
+static const char *
+libsqfs_compounddata_describe(libsqfs_data_t data)
+{
+	return "<compound-data-block>";
+}
+
+
 static void
 libsqfs_compounddata_destroy(libsqfs_data_t data)
 {
@@ -242,6 +285,7 @@ libsqfs_compounddata_destroy(libsqfs_data_t data)
 const libsqfs_data_vmt libsqfs_compounddata_vmt = {
 	.get_size = &libsqfs_compounddata_get_size,
 	.pread = &libsqfs_compounddata_pread,
+	.describe = &libsqfs_compounddata_describe,
 	.destroy = &libsqfs_compounddata_destroy
 };
 

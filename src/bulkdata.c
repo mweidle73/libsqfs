@@ -1,6 +1,7 @@
 #include "bulkdata.h"
 #include "internal.h"
 
+#include <stdio.h>
 #include <assert.h>
 
 static inline void
@@ -95,7 +96,7 @@ libsqfs_chunk_do_read(libsqfs_chunk * chunk, libsqfs_image_t image)
 	assert(chunk->data.size);
 	chunk->cached_data = malloc(chunk->data.size);
 	if (!chunk->cached_data) {
-		libsqfs_image_out_of_memory(image);
+		libsqfs_image_out_of_memory(image, true);
 		pthread_mutex_lock(&chunk->bulkdata->lock);
 		return false;
 	}
@@ -103,8 +104,12 @@ libsqfs_chunk_do_read(libsqfs_chunk * chunk, libsqfs_image_t image)
 	ssize_t count = libsqfs_data_pread(chunk->data.data, chunk->cached_data, chunk->data.size, chunk->data.offset);
 	
 	if (count != chunk->data.size) {
-		/* FIXME: this error could be more descriptive */
-		libsqfs_image_flag_error(image, "Read failed");
+		char message[1024], * reason;
+		if (count == -1) reason = "short read";
+		else reason = strerror(errno);
+		snprintf(message, sizeof(message), "Read failed from %s (%s)",
+			libsqfs_data_describe(chunk->data.data), reason);
+		libsqfs_image_flag_error(image, message, true);
 		pthread_mutex_lock(&chunk->bulkdata->lock);
 		return false;
 	}
@@ -202,8 +207,11 @@ libsqfs_image_block_write(libsqfs_chunk * chunk, libsqfs_image_block * dst, libs
 	
 	ssize_t count = libsqfs_pwrite(image->dst, dst->data, dst->size, dst->offset);
 	if (count != dst->size) {
-		/* FIXME: this error could be more descriptive */
-		libsqfs_image_flag_error(image, "Write failed");
+		char message[1024], * reason;
+		if (count == -1) reason = "short write";
+		else reason = strerror(errno);
+		snprintf(message, sizeof(message), "Write to image file failed: %s", reason);
+		libsqfs_image_flag_error(image, message, true);
 		pthread_mutex_lock(&chunk->bulkdata->lock);
 		return false;
 	}
@@ -304,7 +312,7 @@ libsqfs_fragment_piece_assign(libsqfs_chunk * chunk, libsqfs_image_t image)
 		frag_block = libsqfs_fragment_block_create(piece->bulkdata);
 		if (!frag_block) {
 			pthread_mutex_unlock(&piece->bulkdata->lock);
-			libsqfs_image_out_of_memory(image);
+			libsqfs_image_out_of_memory(image, true);
 			pthread_mutex_lock(&piece->bulkdata->lock);
 			return false;
 		}
@@ -351,7 +359,7 @@ libsqfs_fragment_piece_compress(libsqfs_chunk * chunk, libsqfs_compressor_instan
 	}
 	
 	if (!libsqfs_image_block_compress(&frag_block->dst, buffer, frag_block->size, ci)) {
-		libsqfs_image_out_of_memory(image);
+		libsqfs_image_out_of_memory(image, true);
 		pthread_mutex_lock(&piece->bulkdata->lock);
 		return false;
 	}
@@ -492,7 +500,7 @@ libsqfs_full_block_compress(libsqfs_chunk * chunk, libsqfs_compressor_instance *
 	pthread_mutex_unlock(&block->bulkdata->lock);
 	
 	if (!libsqfs_image_block_compress(&block->dst, block->cached_data, block->data.size, ci)) {
-		libsqfs_image_out_of_memory(image);
+		libsqfs_image_out_of_memory(image, true);
 		pthread_mutex_lock(&block->bulkdata->lock);
 		return false;
 	}

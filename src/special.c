@@ -57,12 +57,15 @@ libsqfs_symlink_inode_t
 libsqfs_symlink_inode_create(libsqfs_image_t image, libsqfs_inodeattr_t attr, const char * name)
 {
 	libsqfs_symlink_inode_t lnk = malloc(sizeof(*lnk));
-	/* FIXME: flag error on image */
-	if (!lnk) return 0;
+	if (!lnk) {
+		libsqfs_image_out_of_memory(image, false);
+		return 0;
+	}
 	
 	lnk->name = strdup(name);
 	if (!lnk->name) {
 		free(lnk);
+		libsqfs_image_out_of_memory(image, false);
 		return 0;
 	}
 	
@@ -134,8 +137,10 @@ libsqfs_device_inode_create(libsqfs_image_t image, libsqfs_inodeattr_t attr, cha
 {
 	if ((type != 'c') && (type != 'b')) return 0;
 	libsqfs_device_inode_t dev = malloc(sizeof(*dev));
-	/* FIXME: flag error on image */
-	if (!dev) return 0;
+	if (!dev) {
+		libsqfs_image_out_of_memory(image, false);
+		return 0;
+	}
 	
 	dev->vmt = &libsqfs_device_inode_vmt;
 	dev->attr = attr;

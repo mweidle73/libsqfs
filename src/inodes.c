@@ -37,7 +37,7 @@ libsqfs_inodeattr_create_simple(libsqfs_image_t image, uid_t uid, gid_t gid, mod
 	attr->mapped_gid = libsqfs_idtable_map(&image->idtable, gid);
 	
 	if (attr->mapped_uid == -1 || attr->mapped_gid == -1) {
-		/* FIXME: set error on image */
+		libsqfs_image_flag_error(image, "Too many user/group ids", false);
 		return 0;
 	}
 	

@@ -20,8 +20,10 @@ libsqfs_data_get_size(libsqfs_data_t data);
 ssize_t
 libsqfs_data_pread(libsqfs_data_t data, void * buffer, size_t size, libsqfs_off_t offset);
 
+const char *
+libsqfs_data_describe(libsqfs_data_t data);
+
 void
 libsqfs_data_destroy(libsqfs_data_t data);
-
 
 #endif

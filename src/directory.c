@@ -352,7 +352,7 @@ libsqfs_directory_add_entry(libsqfs_directory_inode_t parent, const char * name,
 		if (((libsqfs_directory_inode_t) inode)->parent) {
 			/* this directory already has a parent, it cannot
 			have another one; bail out */
-			libsqfs_image_flag_error(parent->image, "Directory can have only one parent directory");
+			libsqfs_image_flag_error(parent->image, "Directory can have only one parent directory", false);
 			return false;
 		}
 		((libsqfs_directory_inode_t) inode)->parent = parent;
@@ -361,14 +361,14 @@ libsqfs_directory_add_entry(libsqfs_directory_inode_t parent, const char * name,
 	
 	libsqfs_directory_entry * entry = malloc(sizeof(*entry));
 	if (!entry) {
-		libsqfs_image_out_of_memory(parent->image);
+		libsqfs_image_out_of_memory(parent->image, false);
 		return false;
 	}
 	
 	entry->name = strdup(name);
 	if (!entry->name) {
 		free(entry);
-		libsqfs_image_out_of_memory(parent->image);
+		libsqfs_image_out_of_memory(parent->image, false);
 		return false;
 	}
 	entry->encoded_size = 0;

@@ -81,7 +81,10 @@ struct _libsqfs_image {
 	libsqfs_image_options options;
 	libsqfs_destination_t dst;
 	libsqfs_off_t size;
+	
 	libsqfs_image_state_t state;
+	const char * error_msg;
+	pthread_mutex_t state_mutex;
 	
 	uint32_t creation_time;
 	
@@ -106,6 +109,7 @@ struct _libsqfs_image {
 	
 	libsqfs_directory_inode_t root;
 	libsqfs_threadpool threadpool;
+	
 };
 
 /* reserve space in image */
@@ -115,12 +119,12 @@ libsqfs_image_reserve(libsqfs_image_t image, size_t bytes);
 /* flag error state on image: some memory allocation failed; may be
 called from other threads, must be called without any locks held */
 void
-libsqfs_image_out_of_memory(libsqfs_image_t image);
+libsqfs_image_out_of_memory(libsqfs_image_t image, bool fatal);
 
 /* flag other error state on image, with description; may be called from
 another thread, must be called without any locks held */
 void
-libsqfs_image_flag_error(libsqfs_image_t image, const char description[]);
+libsqfs_image_flag_error(libsqfs_image_t image, const char description[], bool fatal);
 
 bool
 libsqfs_write_superblock(libsqfs_image_t image);

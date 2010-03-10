@@ -180,8 +180,8 @@ typedef struct _libsqfs_image * libsqfs_image_t;
 typedef enum {
 	/** \brief Image is currently being built */
 	libsqfs_image_building,
-	/** \brief An error occured while building image; image cannot be finilazed anymore */
-	libsqfs_image_error,
+	/** \brief An error occured while building image; image cannot be finalized anymore */
+	libsqfs_image_fatal_error,
 	/** \brief Image was finalized, i.e. fully written to destination */
 	libsqfs_image_finalized
 } libsqfs_image_state_t;
@@ -263,7 +263,7 @@ libsqfs_image_worker_thread_function(libsqfs_image_t image);
 	
 	While the image is in \ref libsqfs_image_building state, data
 	may be added to the image. When the image is in
-	\ref libsqfs_image_error state, a non-recoverable error occured
+	\ref libsqfs_image_fatal_error state, a non-recoverable error occured
 	while creating the image. The (partial) image already created
 	is unusable and cannot be completed. When the image is in
 	\ref libsqfs_image_finalized state, the image was completed
@@ -275,7 +275,7 @@ libsqfs_image_state(libsqfs_image_t image);
 /**
 	\brief Finalize @c squashfs image
 	\param image @c squashfs image handle
-	\return Either \ref libsqfs_image_error or \ref libsqfs_image_finalized
+	\return Either \ref libsqfs_image_fatal_error or \ref libsqfs_image_finalized
 	
 	Finalizes the image, i.e. completes all pending writes and
 	links internal structures. Nothing can be added to the image
@@ -289,7 +289,7 @@ libsqfs_image_finalize(libsqfs_image_t image);
 	\param image @c squashfs image handle
 	
 	Abort creation of image, cancels all pending operations.
-	The image will be in \ref libsqfs_image_error state
+	The image will be in \ref libsqfs_image_fatal_error state
 	afterwards. Call this function if some error external
 	to libsqfs occured in user code and you want to abort
 	image creation as quickly as possible.
@@ -315,14 +315,27 @@ libsqfs_image_close(libsqfs_image_t image);
 	\param image @c squashfs image handle
 	\return String describing error
 	
-	Returns a string describing the error that happened while
-	creating the image. The string is allocated with the image
-	and will be freed on \ref libsqfs_image_close, the caller
+	Returns a string describing the first error that happened
+	since beginning creation of the image or the last time
+	the error state was cleared (see \ref libsqfs_image_error_clear).
+	The string is allocated with the image
+	and will be freed on both \ref libsqfs_image_close or
+	\ref libsqfs_image_error_clear, the caller
 	must thus copy it if it needs to be retained past this
 	point.
 */
 const char *
-libsqfs_image_errorstr(libsqfs_image_t image);
+libsqfs_image_error_message(libsqfs_image_t image);
+
+/**
+	\brief Clear last error
+	\param image @c squashfs image handle
+	
+	Clears the last error. Image creation may be proceed unless
+	the error isn fatal (see \ref libsqfs_image_fatal_error).
+*/
+void
+libsqfs_image_error_clear(libsqfs_image_t image);
 
 /*@}*/
 
