@@ -1,5 +1,6 @@
 #include "internal.h"
 #include <unistd.h>
+#include <signal.h>
 
 struct _libsqfs_worker_thread {
 	pthread_t handle;
@@ -35,7 +36,11 @@ libsqfs_threadpool_spawn_worker(libsqfs_threadpool * threadpool,
 	libsqfs_worker_thread * thread = malloc(sizeof(*thread));
 	if (!thread) return false;
 	
+	sigset_t fullset, oldset;
+	sigfillset(&fullset);
+	pthread_sigmask(SIG_SETMASK, &fullset, &oldset);
 	int error = pthread_create(&thread->handle, 0, function, closure);
+	pthread_sigmask(SIG_SETMASK, &oldset, 0);
 	if (error) {
 		free(thread);
 		return false;
