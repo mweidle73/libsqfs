@@ -624,45 +624,12 @@ libsqfs_bulkdata_fini(libsqfs_bulkdata * bd)
 	}
 }
 
-#if 0
-static void dump_queue(const char * name, libsqfs_chunk_workq * workq)
-{
-	printf("%s:", name);
-	libsqfs_chunk * chunk= workq->first;
-	while(chunk) {
-		printf(" %p", chunk);
-		assert(chunk != chunk->workq_next);
-		chunk = chunk->workq_next;
-	}
-	printf("\n");
-}
-#endif
-
 /* pick the first chunk not yet claimed by any other thread, and work on it
 as far as possible */
 static bool
 libsqfs_bulkdata_process_single_locked(libsqfs_bulkdata * bd, libsqfs_compressor_instance * ci, libsqfs_image_t image)
 {
 	libsqfs_chunk * chunk;
-	
-#if 0
-	printf("\n");
-	chunk = bd->chunks.first;
-	while(chunk) {
-		printf("%p(%s:%d) ", chunk, 
-			(chunk->vmt == &libsqfs_fragment_piece_vmt) ? "frag" : "blck",
-			chunk->state);
-		chunk = chunk->next;
-	}
-	
-	printf("\n");
-	dump_queue("writeq", &bd->writeq);
-	dump_queue("compressq", &bd->compressq);
-	dump_queue("assignq", &bd->assignq);
-	dump_queue("dedupq", &bd->dedupq);
-	dump_queue("readq", &bd->readq);
-	fflush(stdout);
-#endif
 	
 	chunk = libsqfs_chunk_workq_pop(&bd->writeq);
 	if (chunk) return chunk->vmt->write(chunk, image);
