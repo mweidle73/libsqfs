@@ -90,7 +90,9 @@ typedef struct _libsqfs_image_options * libsqfs_image_options_t;
 	\brief Create handle for image options
 	\returns Handle for default image options
 	
-	Options are set up with library defaults.
+	Options are set up with library defaults. The structure
+	must be destroyed with \ref libsqfs_image_options_destroy
+	after the caller is finished using it.
 */
 libsqfs_image_options_t
 libsqfs_image_options_create(void);
@@ -192,7 +194,12 @@ typedef enum {
 	\param options Options controlling on-disk layout of image (or NULL for defaults)
 	\return @c squashfs image handle, or NULL on error with errno set appropriately
 	
-	Create new image
+	Create new image. @p options may either be NULL (in which case library defaults
+	will be used for all settings), or a handle to an options data structure
+	(created by \ref libsqfs_image_options_create and modified through the various
+	calls descriebed in \ref image_options. In the latter case, the options will
+	be copied over into the image, so the caller may call
+	\ref libsqfs_image_options_destroy on it immediately afterwards.
 */
 libsqfs_image_t
 libsqfs_image_create(libsqfs_destination_t destination, libsqfs_image_options_t options);
@@ -232,7 +239,6 @@ libsqfs_image_spawn_threads(libsqfs_image_t image, size_t count);
 ssize_t
 libsqfs_image_auto_spawn_threads(libsqfs_image_t image);
 
-
 /**
 	\brief Assist in creating squashfs image
 	\param image @c squashfs image handle
@@ -248,8 +254,11 @@ libsqfs_image_auto_spawn_threads(libsqfs_image_t image);
 	to have control over thread creation and termination.
 	
 	<B>Important</B>: The main thread <B>must not</B> call
-	\ref libsqfs_image_close before every thread has returned
-	from this call.
+	\ref libsqfs_image_close before every other thread has
+	returned from this call and must perform any required
+	thread synchronization to achieve this. The main
+	thread <B>must not</B> call this function itself
+	as it will deadlock.
 */
 void
 libsqfs_image_worker_thread_function(libsqfs_image_t image);
@@ -306,6 +315,15 @@ libsqfs_image_abort(libsqfs_image_t image);
 	during construction of the image. Implicitly
 	calls \ref libsqfs_image_finalize if the image is
 	in \ref libsqfs_image_building state.
+	
+	The function waits for termination of all helper
+	threads spawned through \ref libsqfs_image_spawn_threads
+	or \ref libsqfs_image_auto_spawn_threads.
+	
+	If any user-thread has been assigned to assist in image
+	creation through \ref libsqfs_image_worker_thread_function,
+	you must ensure that all threads have returned from this
+	call before closing the image.
 */
 libsqfs_image_state_t
 libsqfs_image_close(libsqfs_image_t image);
@@ -625,6 +643,9 @@ libsqfs_symlink_inode_downcast(libsqfs_symlink_inode_t inode);
 */
 /*@{*/
 
+/**
+	\brief Device inode
+*/
 typedef struct _libsqfs_device_inode * libsqfs_device_inode_t;
 
 /**
@@ -633,7 +654,7 @@ typedef struct _libsqfs_device_inode * libsqfs_device_inode_t;
 	\param attr Attributes
 	\param type Either 'c' or 'b' to indicate char or block device
 	\param dev_major_no Major device number
-	\param dev_minorno Minor device number
+	\param dev_minor_no Minor device number
 	\return inode handle, or NULL on failure
 */
 libsqfs_device_inode_t
