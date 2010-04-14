@@ -81,7 +81,8 @@ libsqfs_symlink_inode_t
 add_symlink(libsqfs_image_t image, const char pathname[], libsqfs_inodeattr_t attr)
 {
 	char target[1024];
-	readlink(pathname, target, sizeof(target)-1);
+	int len = readlink(pathname, target, sizeof(target)-1);
+	target[len] = 0;
 	return libsqfs_symlink_inode_create(image, attr, target);
 }
 
