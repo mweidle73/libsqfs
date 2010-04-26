@@ -202,7 +202,7 @@ libsqfs_image_finalize(libsqfs_image_t image)
 	success = success && libsqfs_bulkdata_seal(&image->bulkdata);
 	success = success && libsqfs_bulkdata_finish(&image->bulkdata, image);
 	
-	libsqfs_inode_serialize(libsqfs_directory_inode_downcast(image->root));
+	if (success) libsqfs_inode_serialize(libsqfs_directory_inode_downcast(image->root));
 	success = success && libsqfs_metatable_write(&image->inode_table, image);
 	success = success && libsqfs_metatable_write(&image->dir_table, image);
 	
