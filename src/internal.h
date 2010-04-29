@@ -20,6 +20,8 @@
 #ifndef LIBSQFS_INTERNAL_H
 #define LIBSQFS_INTERNAL_H
 
+#include "config.h"
+
 #include <libsqfs.h>
 #include <stdint.h>
 #include <string.h>

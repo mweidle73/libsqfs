@@ -1,0 +1,10 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+
+Name: libsqfs
+Description: Library for generating squashfs images
+Version: @VERSION@
+Cflags: -I${includedir}
+Libs: -L${libdir} -lsqfs
