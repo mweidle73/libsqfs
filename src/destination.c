@@ -73,14 +73,14 @@ static ssize_t
 libsqfs_destination_file_pwrite(libsqfs_destination_t destination, const void * buffer, size_t size, libsqfs_off_t offset)
 {
 	libsqfs_destination_file * f = (libsqfs_destination_file *) destination;
-	return pwrite64(f->fd, buffer, size, offset);
+	return pwrite(f->fd, buffer, size, (off_t)offset);
 }
 
 static void
 libsqfs_destination_file_truncate(libsqfs_destination_t destination, libsqfs_off_t offset)
 {
 	libsqfs_destination_file * f = (libsqfs_destination_file *) destination;
-	ftruncate64(f->fd, offset);
+	ftruncate(f->fd, (off_t)offset);
 }
 
 static const libsqfs_destination_vmt libsqfs_destination_file_vmt = {
@@ -110,7 +110,7 @@ libsqfs_destination_create_for_filedes(int fd)
 libsqfs_destination_t
 libsqfs_destination_create_for_file(const char * name, mode_t mode)
 {
-	int fd = open(name, O_CREAT|O_WRONLY|O_LARGEFILE, mode);
+	int fd = open(name, O_CREAT|O_WRONLY, mode);
 	if (fd<0) return 0;
 	if (ftruncate(fd, 0)) {
 		int error = errno;

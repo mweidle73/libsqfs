@@ -77,8 +77,8 @@ static libsqfs_off_t
 libsqfs_filedata_get_size(libsqfs_data_t data)
 {
 	libsqfs_filedata * filedata = (libsqfs_filedata *)data;
-	struct stat64 st;
-	int error = stat64(filedata->pathname, &st);
+	struct stat st;
+	int error = stat(filedata->pathname, &st);
 	if (error) {
 		char errormsg[1024];
 		snprintf(errormsg, sizeof(errormsg), "Unable to stat file %s: %s",
@@ -95,10 +95,10 @@ libsqfs_filedata_pread(libsqfs_data_t data, void * buffer, size_t size, libsqfs_
 	/* currently, a new file descriptor is opened for every operation;
 	this obviuosly sucks, but for now it is good enough */
 	libsqfs_filedata * filedata = (libsqfs_filedata *)data;
-	int fd = open(filedata->pathname, O_RDONLY|O_LARGEFILE);
+	int fd = open(filedata->pathname, O_RDONLY);
 	if (fd<0) return -1;
 	
-	ssize_t count = pread64(fd, buffer, size, offset);
+	ssize_t count = pread(fd, buffer, size, (off_t)offset);
 	if (count != size) {
 		/* "close" might conceivably change errno, so preserve it */
 		int saved_errno = errno;
