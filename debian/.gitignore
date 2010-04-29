@@ -1,0 +1,7 @@
+*.log
+*.substvars
+*.debhelper
+files
+libsqfs/
+libsqfs-dev/
+tmp/

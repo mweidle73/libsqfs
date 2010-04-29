@@ -1,0 +1,4 @@
+usr/include/*.h
+usr/lib/libsqfs.a
+usr/lib/libsqfs.so
+usr/lib/pkgconfig/libsqfs.pc

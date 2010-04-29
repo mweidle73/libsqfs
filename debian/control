@@ -1,0 +1,25 @@
+Source: libsqfs
+Section: libs
+Priority: optional
+Maintainer: Helge Bahmann <helge.bahmann@secunet.com>
+Standards-Version: 3.8.3
+Build-Depends: debhelper (>= 7.0.15), zlib1g-dev (>=1.2.3.3)
+Homepage: http://gitorious.org/libsqfs
+
+Package: libsqfs
+Priority: standard
+Architecture: any
+Depends: ${shlibs:Depends}
+Description: support for manipulating Squashfs images
+ This library is targeted at developers who need to create squashfs
+ images and want more precise control over the final image than
+ offered by the command-line tool.
+
+Package: libsqfs-dev
+Section: libdevel
+Architecture: any
+Depends: libsqfs (= ${binary:Version})
+Suggests: manpages-dev
+Description: development libraries and header files for libsqfs
+ Contains the necessary support for building applications that manipulate
+ squashfs images.
