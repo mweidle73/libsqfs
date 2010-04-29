@@ -23,6 +23,11 @@
 #include <stdbool.h>
 #include <sys/types.h>
 
+#ifdef __cpluscplus
+extern "C"
+{
+#endif
+
 /** \brief Type for representing file offsets */
 typedef long long libsqfs_off_t;
 
@@ -723,5 +728,9 @@ libsqfs_directory_inode_t
 libsqfs_image_get_root(libsqfs_image_t image);
 
 /*@}*/
+
+#ifdef __cpluscplus
+}
+#endif
 
 #endif
