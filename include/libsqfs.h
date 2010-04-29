@@ -691,6 +691,14 @@ libsqfs_device_inode_downcast(libsqfs_device_inode_t inode);
 
 /*@}*/
 
+typedef struct _libsqfs_fifo_inode * libsqfs_fifo_inode_t;
+
+libsqfs_fifo_inode_t 
+libsqfs_fifo_inode_create(libsqfs_image_t image, libsqfs_inodeattr_t attr);
+
+libsqfs_inode_t
+libsqfs_fifo_inode_downcast(libsqfs_fifo_inode_t inode);
+
 /** \addtogroup images */
 /*@{*/
 

@@ -176,3 +176,64 @@ libsqfs_device_inode_downcast(libsqfs_device_inode_t inode)
 {
 	return (libsqfs_inode_t) inode;
 }
+
+struct _libsqfs_fifo_inode {
+	LIBSQFS_INODE_COMMON
+};
+
+static bool
+libsqfs_fifo_inode_serialize(libsqfs_inode_t inode)
+{
+	libsqfs_fifo_inode_t fifo = (libsqfs_fifo_inode_t) inode;
+	libsqfs_image_t image = fifo->image;
+	struct squashfs_ipc_inode_header hdr;
+
+	fifo->encoded_type = SQUASHFS_FIFO_TYPE;
+
+	hdr.inode_type = cpu_to_le16(fifo->encoded_type);
+	hdr.mode = cpu_to_le16(fifo->attr->mode);
+	hdr.uid = cpu_to_le16(fifo->attr->mapped_uid);
+	hdr.guid = cpu_to_le16(fifo->attr->mapped_gid);
+	hdr.mtime = cpu_to_le32(fifo->attr->ctime);
+	hdr.inode_number = cpu_to_le32(fifo->inode_number);
+	hdr.nlink = cpu_to_le32(fifo->nlink);
+
+	return libsqfs_metatable_append(&image->inode_table, &hdr, sizeof(hdr),
+					&fifo->inode_table_entry);
+}
+
+static void
+libsqfs_fifo_inode_destroy(libsqfs_inode_t inode)
+{
+	libsqfs_fifo_inode_t fifo = (libsqfs_fifo_inode_t) inode;
+	free(fifo);
+}
+
+static const libsqfs_inode_vmt libsqfs_fifo_inode_vmt = {
+	.serialize = &libsqfs_fifo_inode_serialize,
+	.destroy = &libsqfs_fifo_inode_destroy
+};
+
+libsqfs_fifo_inode_t
+libsqfs_fifo_inode_create(libsqfs_image_t image, libsqfs_inodeattr_t attr)
+{
+	libsqfs_fifo_inode_t fifo = malloc(sizeof(*fifo));
+
+	if (!fifo) {
+		libsqfs_image_out_of_memory(image, false);
+		return 0;
+	}
+
+	fifo->vmt = &libsqfs_fifo_inode_vmt;
+	fifo->attr = attr;
+	fifo->nlink = 0;
+	libsqfs_inode_init(image, (libsqfs_inode_t) fifo);
+
+	return fifo;
+}
+
+libsqfs_inode_t
+libsqfs_fifo_inode_downcast(libsqfs_fifo_inode_t inode)
+{
+	return (libsqfs_inode_t) inode;
+}
