@@ -43,7 +43,7 @@
 ssize_t
 libsqfs_pwrite(libsqfs_destination_t destination, const void * buffer, size_t size, libsqfs_off_t offset);
 
-void
+int
 libsqfs_truncate(libsqfs_destination_t destination, libsqfs_off_t offset);
 
 /* entry function for worker threads */

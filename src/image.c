@@ -215,7 +215,8 @@ libsqfs_image_finalize(libsqfs_image_t image)
 	if (success && image->options.padding) {
 		libsqfs_off_t padded_size = (image->size + 4095) & ~4095;
 		if (padded_size != image->size)
-			libsqfs_truncate(image->dst, padded_size);
+			if (libsqfs_truncate(image->dst, padded_size))
+				return false;
 	}
 	
 	/* note: since previous error messages are not overwritten,

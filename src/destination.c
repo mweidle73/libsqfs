@@ -29,7 +29,7 @@ typedef struct _libsqfs_destination_vmt libsqfs_destination_vmt;
 struct _libsqfs_destination_vmt {
 	void (*close)(libsqfs_destination_t destination);
 	ssize_t (*pwrite)(libsqfs_destination_t destination, const void * buffer, size_t size, libsqfs_off_t offset);
-	void (*truncate)(libsqfs_destination_t destination, libsqfs_off_t offset);
+	int (*truncate)(libsqfs_destination_t destination, libsqfs_off_t offset);
 };
 
 struct _libsqfs_destination {
@@ -48,7 +48,7 @@ libsqfs_pwrite(libsqfs_destination_t destination, const void * buffer, size_t si
 	return destination->vmt->pwrite(destination, buffer, size, offset);
 }
 
-void
+int
 libsqfs_truncate(libsqfs_destination_t destination, libsqfs_off_t offset)
 {
 	return destination->vmt->truncate(destination, offset);
@@ -76,11 +76,11 @@ libsqfs_destination_file_pwrite(libsqfs_destination_t destination, const void * 
 	return pwrite(f->fd, buffer, size, (off_t)offset);
 }
 
-static void
+static int
 libsqfs_destination_file_truncate(libsqfs_destination_t destination, libsqfs_off_t offset)
 {
 	libsqfs_destination_file * f = (libsqfs_destination_file *) destination;
-	ftruncate(f->fd, (off_t)offset);
+	return ftruncate(f->fd, (off_t)offset);
 }
 
 static const libsqfs_destination_vmt libsqfs_destination_file_vmt = {
@@ -152,9 +152,10 @@ libsqfs_destination_null_pwrite(libsqfs_destination_t destination, const void * 
 	return size;
 }
 
-static void
+static int
 libsqfs_destination_null_truncate(libsqfs_destination_t destination, libsqfs_off_t offset)
 {
+	return 0;
 }
 
 static const libsqfs_destination_vmt libsqfs_destination_null_vmt = {
