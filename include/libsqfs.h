@@ -694,15 +694,37 @@ libsqfs_device_inode_downcast(libsqfs_device_inode_t inode);
 
 /*@}*/
 
-/*@}*/
+/**
+	\defgroup device_inodes Device inodes
+*/
+/*@{*/
 
+/**
+	\brief FIFO inode
+*/
 typedef struct _libsqfs_fifo_inode * libsqfs_fifo_inode_t;
 
+/**
+	\brief Create FIFO inode
+	\param image @c squashfs image handle
+	\param attr Attributes
+	\return inode handle, or NULL on failure
+*/
 libsqfs_fifo_inode_t 
 libsqfs_fifo_inode_create(libsqfs_image_t image, libsqfs_inodeattr_t attr);
 
+/**
+	\brief Reinterpret fifo as generic inode
+	\param inode FIFO inode
+	\return The same inode, reinterpreted as generic inode
+*/
 libsqfs_inode_t
 libsqfs_fifo_inode_downcast(libsqfs_fifo_inode_t inode);
+
+/*@}*/
+
+/*@}*/
+
 
 /** \addtogroup images */
 /*@{*/
