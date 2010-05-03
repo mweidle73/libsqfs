@@ -16,5 +16,6 @@ AC_SUBST(CWARNFLAGS)
 
 AC_CONFIG_FILES([Makefile
                  src/Makefile
+                 examples/Makefile
                  libsqfs.pc])
 AC_OUTPUT

@@ -1,4 +1,4 @@
-SUBDIRS = src
+SUBDIRS = src examples
 
 lib_LTdir = $(libdir)
 
