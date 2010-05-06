@@ -4,4 +4,5 @@
 files
 libsqfs/
 libsqfs-dev/
+libsqfs-bin/
 tmp/

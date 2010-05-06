@@ -23,3 +23,10 @@ Suggests: manpages-dev
 Description: development libraries and header files for libsqfs
  Contains the necessary support for building applications that manipulate
  squashfs images.
+
+Package: libsqfs-bin
+Section: admin
+Architecture: any
+Depends: libsqfs (= ${binary:Version})
+Description: tool for generating squashfs images
+ Contains the mksqfs tool for creating squashfs images
