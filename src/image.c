@@ -197,7 +197,10 @@ libsqfs_image_finalize(libsqfs_image_t image)
 	
 	bool success = true;
 	
-	if (!image->root) success = false;
+	if (!image->root) {
+		libsqfs_image_flag_error(image, "No root directory set", true);
+		success = false;
+	}
 	
 	success = success && libsqfs_bulkdata_seal(&image->bulkdata);
 	success = success && libsqfs_bulkdata_finish(&image->bulkdata, image);
