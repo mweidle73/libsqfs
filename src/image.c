@@ -129,7 +129,7 @@ libsqfs_image_create(libsqfs_destination_t destination, libsqfs_image_options_t 
 	
 	image->root = 0;
 	
-	libsqfs_bulkdata_init(&image->bulkdata);
+	libsqfs_bulkdata_init(&image->bulkdata, image->options.data_compression, image->options.fragment_compression);
 	libsqfs_idtable_init(&image->idtable);
 	libsqfs_metatable_init(&image->dir_table, image->options.inode_compression ? image->compressor : 0);
 	libsqfs_metatable_init(&image->inode_table, image->options.inode_compression ? image->compressor : 0);

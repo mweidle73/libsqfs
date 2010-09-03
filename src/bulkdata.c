@@ -225,6 +225,19 @@ libsqfs_image_block_compress(libsqfs_image_block * dst, const void * src, size_t
 }
 
 static bool
+libsqfs_image_block_uncompressed(libsqfs_image_block * dst, const void * src, size_t size)
+{
+	dst->data = malloc(size);
+	if (!size) return false;
+	
+	dst->compressed = false;
+	dst->size = size;
+	memcpy(dst->data, src, size);
+	
+	return true;
+}
+
+static bool
 libsqfs_image_block_write(libsqfs_chunk * chunk, libsqfs_image_block * dst, libsqfs_image_t image)
 {
 	dst->offset = libsqfs_image_reserve(image, dst->size);
@@ -383,7 +396,12 @@ libsqfs_fragment_piece_compress(libsqfs_chunk * chunk, libsqfs_compressor_instan
 		p = p->next_in_block;
 	}
 	
-	if (!libsqfs_image_block_compress(&frag_block->dst, buffer, frag_block->size, ci)) {
+	bool result;
+	if (piece->bulkdata->compress_fragments)
+		result = libsqfs_image_block_compress(&frag_block->dst, buffer, frag_block->size, ci);
+	else
+		result = libsqfs_image_block_uncompressed(&frag_block->dst, buffer, frag_block->size);
+	if (!result) {
 		libsqfs_image_out_of_memory(image, true);
 		pthread_mutex_lock(&piece->bulkdata->lock);
 		return false;
@@ -524,7 +542,12 @@ libsqfs_full_block_compress(libsqfs_chunk * chunk, libsqfs_compressor_instance *
 	
 	pthread_mutex_unlock(&block->bulkdata->lock);
 	
-	if (!libsqfs_image_block_compress(&block->dst, block->cached_data, block->data.size, ci)) {
+	bool result;
+	if (block->bulkdata->compress_blocks)
+		result = libsqfs_image_block_compress(&block->dst, block->cached_data, block->data.size, ci);
+	else
+		result = libsqfs_image_block_uncompressed(&block->dst, block->cached_data, block->data.size);
+	if (!result) {
 		libsqfs_image_out_of_memory(image, true);
 		pthread_mutex_lock(&block->bulkdata->lock);
 		return false;
@@ -583,7 +606,7 @@ libsqfs_full_block_create(libsqfs_bulkdata * bd, libsqfs_data_piece data)
 }
 
 void
-libsqfs_bulkdata_init(libsqfs_bulkdata * bd)
+libsqfs_bulkdata_init(libsqfs_bulkdata * bd, bool may_compress_blocks, bool may_compress_fragments)
 {
 	bd->chunks.first = bd->chunks.last = 0;
 	bd->chunks.count = bd->chunks.finished = 0;
@@ -602,6 +625,9 @@ libsqfs_bulkdata_init(libsqfs_bulkdata * bd)
 	
 	pthread_mutex_init(&bd->lock, 0);
 	pthread_cond_init(&bd->cond, 0);
+	
+	bd->compress_blocks = may_compress_blocks;
+	bd->compress_fragments = may_compress_fragments;
 	
 	bd->frag_table_loc = -1;
 }

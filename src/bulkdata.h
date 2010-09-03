@@ -160,19 +160,22 @@ struct _libsqfs_bulkdata {
 	libsqfs_chunk_workq readq, dedupq, assignq, compressq, writeq;
 	
 	/* indicates that new chunks may still be added, i.e. worker threads
-	may nwill added, i.e. the image is finished */
+	will wait for new data to arrive instead of terminating */
 	bool may_add_chunks, aborted;
 	
 	/* lock enforcing ordered write-out of bulk data */
 	pthread_mutex_t lock;
 	pthread_cond_t cond;
 	
+	/* allow compression of fragments and blocks */
+	bool compress_blocks, compress_fragments;
+	
 	/* location of fragment table */
 	libsqfs_off_t frag_table_loc;
 };
 
 void
-libsqfs_bulkdata_init(libsqfs_bulkdata * bd);
+libsqfs_bulkdata_init(libsqfs_bulkdata * bd, bool may_compress_blocks, bool may_compress_fragments);
 
 void
 libsqfs_bulkdata_fini(libsqfs_bulkdata * bd);
