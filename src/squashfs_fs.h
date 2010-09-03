@@ -3,7 +3,7 @@
 /*
  * Squashfs
  *
- * Copyright (c) 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009
+ * Copyright (c) 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010
  * Phillip Lougher <phillip@lougher.demon.co.uk>
  *
  * This program is free software; you can redistribute it and/or
@@ -48,6 +48,7 @@
 
 #define SQUASHFS_INVALID		((long long) 0xffffffffffff)
 #define SQUASHFS_INVALID_FRAG		((unsigned int) 0xffffffff)
+#define SQUASHFS_INVALID_XATTR		((unsigned int) 0xffffffff)
 #define SQUASHFS_INVALID_BLK		((long long) -1)
 #define SQUASHFS_USED_BLK		((long long) -2)
 
@@ -104,6 +105,13 @@
 #define SQUASHFS_LCHRDEV_TYPE		12
 #define SQUASHFS_LFIFO_TYPE		13
 #define SQUASHFS_LSOCKET_TYPE		14
+
+/* Xattr types */
+#define SQUASHFS_XATTR_USER		0
+#define SQUASHFS_XATTR_TRUSTED		1
+#define SQUASHFS_XATTR_SECURITY		2
+#define SQUASHFS_XATTR_VALUE_OOL	256
+#define SQUASHFS_XATTR_PREFIX_MASK	0xff
 
 /* Flag whether block is compressed or uncompressed, bit is set if block is
  * uncompressed */
@@ -187,6 +195,26 @@
 #define SQUASHFS_ID_BLOCK_BYTES(A)	(SQUASHFS_ID_BLOCKS(A) *\
 					sizeof(long long))
 
+/* xattr id lookup table defines */
+#define SQUASHFS_XATTR_BYTES(A)		((A) * sizeof(struct squashfs_xattr_id))
+
+#define SQUASHFS_XATTR_BLOCK(A)		(SQUASHFS_XATTR_BYTES(A) / \
+					SQUASHFS_METADATA_SIZE)
+
+#define SQUASHFS_XATTR_BLOCK_OFFSET(A)	(SQUASHFS_XATTR_BYTES(A) % \
+					SQUASHFS_METADATA_SIZE)
+
+#define SQUASHFS_XATTR_BLOCKS(A)	((SQUASHFS_XATTR_BYTES(A) + \
+					SQUASHFS_METADATA_SIZE - 1) / \
+					SQUASHFS_METADATA_SIZE)
+
+#define SQUASHFS_XATTR_BLOCK_BYTES(A)	(SQUASHFS_XATTR_BLOCKS(A) *\
+					sizeof(long long))
+
+#define SQUASHFS_XATTR_BLK(A)		((unsigned int) ((A) >> 16))
+
+#define SQUASHFS_XATTR_OFFSET(A)	((unsigned int) ((A) & 0xffff))
+
 /* cached data constants for filesystem */
 #define SQUASHFS_CACHED_BLKS		8
 
@@ -229,6 +257,7 @@ typedef long long		squashfs_block_t;
 typedef long long		squashfs_inode_t;
 
 #define ZLIB_COMPRESSION	1
+#define LZMA_COMPRESSION	2
 
 struct squashfs_super_block {
 	unsigned int		s_magic;
@@ -245,7 +274,7 @@ struct squashfs_super_block {
 	squashfs_inode_t	root_inode;
 	long long		bytes_used;
 	long long		id_table_start;
-	long long		xattr_table_start;
+	long long		xattr_id_table_start;
 	long long		inode_table_start;
 	long long		directory_table_start;
 	long long		fragment_table_start;
@@ -276,10 +305,23 @@ struct squashfs_ipc_inode_header {
 	unsigned int		nlink;
 };
 
+struct squashfs_lipc_inode_header {
+	SQUASHFS_BASE_INODE_HEADER;
+	unsigned int		nlink;
+	unsigned int		xattr;
+};
+
 struct squashfs_dev_inode_header {
 	SQUASHFS_BASE_INODE_HEADER;
 	unsigned int		nlink;
 	unsigned int		rdev;
+};
+	
+struct squashfs_ldev_inode_header {
+	SQUASHFS_BASE_INODE_HEADER;
+	unsigned int		nlink;
+	unsigned int		rdev;
+	unsigned int		xattr;
 };
 	
 struct squashfs_symlink_inode_header {
@@ -334,12 +376,14 @@ struct squashfs_ldir_inode_header {
 union squashfs_inode_header {
 	struct squashfs_base_inode_header	base;
 	struct squashfs_dev_inode_header	dev;
+	struct squashfs_ldev_inode_header	ldev;
 	struct squashfs_symlink_inode_header	symlink;
 	struct squashfs_reg_inode_header	reg;
 	struct squashfs_lreg_inode_header	lreg;
 	struct squashfs_dir_inode_header	dir;
 	struct squashfs_ldir_inode_header	ldir;
 	struct squashfs_ipc_inode_header	ipc;
+	struct squashfs_lipc_inode_header	lipc;
 };
 	
 struct squashfs_dir_entry {
@@ -359,6 +403,34 @@ struct squashfs_dir_header {
 struct squashfs_fragment_entry {
 	long long		start_block;
 	unsigned int		size;
+	unsigned int		unused;
+};
+
+struct squashfs_xattr_entry {
+	unsigned short		type;
+	unsigned short		size;
+	char			data[0];
+};
+
+struct squashfs_xattr_val {
+	unsigned int		vsize;
+	char			value[0];
+};
+
+struct squashfs_xattr_val_ool {
+	unsigned int		vsize;
+	long long		xattr;
+};
+
+struct squashfs_xattr_id {
+	long long		xattr;
+	unsigned int		count;
+	unsigned int		size;
+};
+
+struct squashfs_xattr_table {
+	long long		xattr_table_start;
+	unsigned int		xattr_ids;
 	unsigned int		unused;
 };
 
