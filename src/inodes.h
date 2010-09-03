@@ -47,28 +47,23 @@ typedef struct _libsqfs_inode_vmt libsqfs_inode_vmt;
 struct _libsqfs_inode_vmt {
 	void (*destroy)(libsqfs_inode_t inode);
 	bool (*serialize)(libsqfs_inode_t inode);
-	/*size_t (*encoded_size)(libsqfs_inode_t inode);
-	void (*encode)(libsqfs_inode_t inode, void * dst);*/
 };
 
-#define LIBSQFS_INODE_COMMON \
-	const libsqfs_inode_vmt * vmt; \
-	libsqfs_inode_t prev, next; \
-	libsqfs_image_t image; \
-	\
-	libsqfs_inodeattr_t attr; \
-	size_t nlink; \
-	\
-	libsqfs_metatable_entry inode_table_entry; \
-	unsigned int inode_number; \
-	int encoded_type; \
-
 struct _libsqfs_inode {
-	LIBSQFS_INODE_COMMON
+	const libsqfs_inode_vmt * vmt;
+	libsqfs_inode_t prev, next;
+	libsqfs_image_t image;
+	
+	libsqfs_inodeattr_t attr;
+	size_t nlink;
+	
+	libsqfs_metatable_entry inode_table_entry;
+	unsigned int inode_number;
+	int encoded_type;
 };
 
 void
-libsqfs_inode_init(libsqfs_image_t image, libsqfs_inode_t inode);
+libsqfs_inode_init(libsqfs_image_t image, libsqfs_inode_t inode, libsqfs_inodeattr_t attr);
 
 void
 libsqfs_inode_destroy(libsqfs_inode_t inode);
@@ -82,7 +77,7 @@ libsqfs_encoded_inode(const libsqfs_inode_t inode)
 typedef struct _libsqfs_directory_entry libsqfs_directory_entry;
 
 struct _libsqfs_directory_inode {
-	LIBSQFS_INODE_COMMON
+	struct _libsqfs_inode base;
 	
 	libsqfs_directory_inode_t parent;
 	struct {

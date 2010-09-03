@@ -25,7 +25,7 @@
 #include "squashfs_fs.h"
 
 struct _libsqfs_regular_inode {
-	LIBSQFS_INODE_COMMON
+	struct _libsqfs_inode base;
 	
 	libsqfs_off_t file_size, sparse_size;
 	size_t nblocks;
@@ -45,24 +45,24 @@ static bool
 libsqfs_regular_inode_serialize(libsqfs_inode_t inode)
 {
 	libsqfs_regular_inode_t reg = (libsqfs_regular_inode_t) inode;
-	libsqfs_image_t image = reg->image;
+	libsqfs_image_t image = reg->base.image;
 	
-	reg->encoded_type = SQUASHFS_FILE_TYPE;
-	if (reg->sparse_size || reg->nlink != 1 || reg->file_size > UINT_MAX)
-		reg->encoded_type = SQUASHFS_LREG_TYPE;
-	if (reg->attr->xattrset)
-		reg->encoded_type = SQUASHFS_LREG_TYPE;
+	reg->base.encoded_type = SQUASHFS_FILE_TYPE;
+	if (reg->sparse_size || reg->base.nlink != 1 || reg->file_size > UINT_MAX)
+		reg->base.encoded_type = SQUASHFS_LREG_TYPE;
+	if (reg->base.attr->xattrset)
+		reg->base.encoded_type = SQUASHFS_LREG_TYPE;
 	if (reg->nblocks && reg->blocks[0]->dst.offset > UINT_MAX)
-		reg->encoded_type = SQUASHFS_LREG_TYPE;
+		reg->base.encoded_type = SQUASHFS_LREG_TYPE;
 	
-	if (reg->encoded_type == SQUASHFS_FILE_TYPE) {
+	if (reg->base.encoded_type == SQUASHFS_FILE_TYPE) {
 		struct squashfs_reg_inode_header hdr;
-		hdr.inode_type = cpu_to_le16(reg->encoded_type);
-		hdr.mode = cpu_to_le16(reg->attr->mode);
-		hdr.uid = cpu_to_le16(reg->attr->mapped_uid);
-		hdr.guid = cpu_to_le16(reg->attr->mapped_gid);
-		hdr.mtime = cpu_to_le32(reg->attr->ctime);
-		hdr.inode_number = cpu_to_le32(reg->inode_number);
+		hdr.inode_type = cpu_to_le16(reg->base.encoded_type);
+		hdr.mode = cpu_to_le16(reg->base.attr->mode);
+		hdr.uid = cpu_to_le16(reg->base.attr->mapped_uid);
+		hdr.guid = cpu_to_le16(reg->base.attr->mapped_gid);
+		hdr.mtime = cpu_to_le32(reg->base.attr->ctime);
+		hdr.inode_number = cpu_to_le32(reg->base.inode_number);
 		
 		if (reg->nblocks)
 			hdr.start_block = cpu_to_le32(reg->blocks[0]->dst.offset);
@@ -76,20 +76,20 @@ libsqfs_regular_inode_serialize(libsqfs_inode_t inode)
 			hdr.offset = cpu_to_le32(0);
 		}
 		hdr.file_size = cpu_to_le32(reg->file_size);
-		if (!libsqfs_metatable_append(&image->inode_table, &hdr, sizeof(hdr), &reg->inode_table_entry))
+		if (!libsqfs_metatable_append(&image->inode_table, &hdr, sizeof(hdr), &reg->base.inode_table_entry))
 			return false;
 	} else {
 		struct squashfs_lreg_inode_header hdr;
-		hdr.inode_type = cpu_to_le16(reg->encoded_type);
-		hdr.mode = cpu_to_le16(reg->attr->mode);
-		hdr.uid = cpu_to_le16(reg->attr->mapped_uid);
-		hdr.guid = cpu_to_le16(reg->attr->mapped_gid);
-		hdr.mtime = cpu_to_le32(reg->attr->ctime);
-		hdr.inode_number = cpu_to_le32(reg->inode_number);
+		hdr.inode_type = cpu_to_le16(reg->base.encoded_type);
+		hdr.mode = cpu_to_le16(reg->base.attr->mode);
+		hdr.uid = cpu_to_le16(reg->base.attr->mapped_uid);
+		hdr.guid = cpu_to_le16(reg->base.attr->mapped_gid);
+		hdr.mtime = cpu_to_le32(reg->base.attr->ctime);
+		hdr.inode_number = cpu_to_le32(reg->base.inode_number);
 		
 		hdr.file_size = cpu_to_le64(reg->file_size);
 		hdr.sparse = cpu_to_le64(reg->sparse_size);
-		hdr.nlink = cpu_to_le32(reg->nlink);
+		hdr.nlink = cpu_to_le32(reg->base.nlink);
 		if (reg->nblocks)
 			hdr.start_block = cpu_to_le64(reg->blocks[0]->dst.offset);
 		else
@@ -101,11 +101,11 @@ libsqfs_regular_inode_serialize(libsqfs_inode_t inode)
 			hdr.fragment = cpu_to_le32(-1);
 			hdr.offset = cpu_to_le32(0);
 		}
-		if (reg->attr->xattrset)
-			hdr.xattr = cpu_to_le32(reg->attr->xattrset->id);
+		if (reg->base.attr->xattrset)
+			hdr.xattr = cpu_to_le32(reg->base.attr->xattrset->id);
 		else
 			hdr.xattr = cpu_to_le32(-1);
-		if (!libsqfs_metatable_append(&image->inode_table, &hdr, sizeof(hdr), &reg->inode_table_entry))
+		if (!libsqfs_metatable_append(&image->inode_table, &hdr, sizeof(hdr), &reg->base.inode_table_entry))
 			return false;
 	}
 	
@@ -168,12 +168,10 @@ libsqfs_regular_inode_create(libsqfs_image_t image, libsqfs_inodeattr_t attr, li
 	
 	memset(reg->blocks, 0, nblocks * sizeof(reg->blocks[0]));
 	
-	reg->vmt = &libsqfs_regular_inode_vmt;
-	reg->attr = attr;
-	reg->nlink = 0;
+	reg->base.vmt = &libsqfs_regular_inode_vmt;
+	libsqfs_inode_init(image, &reg->base, attr);
 	reg->file_size = file_size;
 	reg->sparse_size = 0;
-	libsqfs_inode_init(image, (libsqfs_inode_t) reg);
 	
 	size_t n;
 	for(n=0; n<nblocks; n++) {

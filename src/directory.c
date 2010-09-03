@@ -234,57 +234,57 @@ libsqfs_directory_inode_destroy(libsqfs_inode_t inode)
 static bool
 libsqfs_directory_inode_encode(libsqfs_directory_inode_t dir, libsqfs_metatable * tab)
 {
-	if (dir->encoded_type == SQUASHFS_DIR_TYPE) {
+	if (dir->base.encoded_type == SQUASHFS_DIR_TYPE) {
 		struct squashfs_dir_inode_header hdr;
 		
-		hdr.inode_type = cpu_to_le16(dir->encoded_type);
-		hdr.mode = cpu_to_le16(dir->attr->mode);
-		hdr.uid = cpu_to_le16(dir->attr->mapped_uid);
-		hdr.guid = cpu_to_le16(dir->attr->mapped_gid);
-		hdr.mtime = cpu_to_le32(dir->attr->ctime);
-		hdr.inode_number = cpu_to_le32(dir->inode_number);
+		hdr.inode_type = cpu_to_le16(dir->base.encoded_type);
+		hdr.mode = cpu_to_le16(dir->base.attr->mode);
+		hdr.uid = cpu_to_le16(dir->base.attr->mapped_uid);
+		hdr.guid = cpu_to_le16(dir->base.attr->mapped_gid);
+		hdr.mtime = cpu_to_le32(dir->base.attr->ctime);
+		hdr.inode_number = cpu_to_le32(dir->base.inode_number);
 		
 		hdr.start_block = cpu_to_le32(dir->dir_table_entry.block);
 		hdr.offset = cpu_to_le16(dir->dir_table_entry.offset);
 		
-		hdr.nlink = cpu_to_le32(dir->nlink);
+		hdr.nlink = cpu_to_le32(dir->base.nlink);
 		
 		hdr.file_size = cpu_to_le16(dir->encoded_entries_size + 3);
 		
 		if (dir->parent)
-			hdr.parent_inode = cpu_to_le32(dir->parent->inode_number);
+			hdr.parent_inode = cpu_to_le32(dir->parent->base.inode_number);
 		else
-			hdr.parent_inode = cpu_to_le32(dir->image->inodes.count+1);
+			hdr.parent_inode = cpu_to_le32(dir->base.image->inodes.count+1);
 		
-		return libsqfs_metatable_append(tab, &hdr, sizeof(hdr), &dir->inode_table_entry);
+		return libsqfs_metatable_append(tab, &hdr, sizeof(hdr), &dir->base.inode_table_entry);
 	} else {
 		struct squashfs_ldir_inode_header hdr;
 		
-		hdr.inode_type = cpu_to_le16(dir->encoded_type);
-		hdr.mode = cpu_to_le16(dir->attr->mode);
-		hdr.uid = cpu_to_le16(dir->attr->mapped_uid);
-		hdr.guid = cpu_to_le16(dir->attr->mapped_gid);
-		hdr.mtime = cpu_to_le32(dir->attr->ctime);
-		hdr.inode_number = cpu_to_le32(dir->inode_number);
+		hdr.inode_type = cpu_to_le16(dir->base.encoded_type);
+		hdr.mode = cpu_to_le16(dir->base.attr->mode);
+		hdr.uid = cpu_to_le16(dir->base.attr->mapped_uid);
+		hdr.guid = cpu_to_le16(dir->base.attr->mapped_gid);
+		hdr.mtime = cpu_to_le32(dir->base.attr->ctime);
+		hdr.inode_number = cpu_to_le32(dir->base.inode_number);
 		
-		hdr.nlink = cpu_to_le32(dir->nlink);
+		hdr.nlink = cpu_to_le32(dir->base.nlink);
 		hdr.file_size = cpu_to_le32(dir->encoded_entries_size + 3);
 		hdr.start_block = cpu_to_le32(dir->dir_table_entry.block);
 		
 		if (dir->parent)
-			hdr.parent_inode = cpu_to_le32(dir->parent->inode_number);
+			hdr.parent_inode = cpu_to_le32(dir->parent->base.inode_number);
 		else
-			hdr.parent_inode = cpu_to_le32(dir->image->inodes.count+1);
+			hdr.parent_inode = cpu_to_le32(dir->base.image->inodes.count+1);
 		
 		hdr.i_count = cpu_to_le16(dir->indexed_count);
 		hdr.offset = cpu_to_le16(dir->dir_table_entry.offset);
 		
-		if (dir->attr->xattrset)
-			hdr.xattr = cpu_to_le32(dir->attr->xattrset->id);
+		if (dir->base.attr->xattrset)
+			hdr.xattr = cpu_to_le32(dir->base.attr->xattrset->id);
 		else
 			hdr.xattr = cpu_to_le32(-1);
 		
-		if (!libsqfs_metatable_append(tab, &hdr, sizeof(hdr), &dir->inode_table_entry))
+		if (!libsqfs_metatable_append(tab, &hdr, sizeof(hdr), &dir->base.inode_table_entry))
 			return false;
 		
 		libsqfs_directory_entry * entry = dir->first_indexed;
@@ -310,7 +310,7 @@ static bool
 libsqfs_directory_serialize(libsqfs_inode_t inode)
 {
 	libsqfs_directory_inode_t dir = (libsqfs_directory_inode_t) inode;
-	libsqfs_image_t image = dir->image;
+	libsqfs_image_t image = dir->base.image;
 	
 	/* first, make sure inodes of all entries are serialized */
 	libsqfs_directory_entry * entry = dir->entries.first;
@@ -331,12 +331,12 @@ libsqfs_directory_serialize(libsqfs_inode_t inode)
 	/* choose encoding type; try to stick with the "smallest" type,
 	picking the extended version only if one of the features of this
 	directory requires it */
-	dir->encoded_type = SQUASHFS_DIR_TYPE;
+	dir->base.encoded_type = SQUASHFS_DIR_TYPE;
 	if (dir->indexed_count || dir->encoded_entries_size > USHRT_MAX-3)
-		dir->encoded_type = SQUASHFS_LDIR_TYPE;
+		dir->base.encoded_type = SQUASHFS_LDIR_TYPE;
 	
-	if (dir->attr->xattrset)
-		dir->encoded_type = SQUASHFS_LDIR_TYPE;
+	if (dir->base.attr->xattrset)
+		dir->base.encoded_type = SQUASHFS_LDIR_TYPE;
 	/* now encode the directory inode itself, referencing the previously
 	encoded data in the directory table */
 	if (!libsqfs_directory_inode_encode(dir, &image->inode_table))
@@ -356,14 +356,12 @@ libsqfs_directory_inode_create(libsqfs_image_t image, libsqfs_inodeattr_t attr)
 	libsqfs_directory_inode_t dir = malloc(sizeof(*dir));
 	if (!dir) return 0;
 	
-	dir->vmt = &libsqfs_directory_inode_vmt;
-	dir->attr = attr;
-	dir->nlink = 1;
+	dir->base.vmt = &libsqfs_directory_inode_vmt;
+	libsqfs_inode_init(image, &dir->base, attr);
 	dir->entries.first = dir->entries.last = 0;
 	dir->parent = 0;
 	dir->indexed_count = 0;
 	dir->first_indexed = 0;
-	libsqfs_inode_init(image, (libsqfs_inode_t) dir);
 	
 	return dir;
 }
@@ -375,23 +373,23 @@ libsqfs_directory_add_entry(libsqfs_directory_inode_t parent, const char * name,
 		if (((libsqfs_directory_inode_t) inode)->parent) {
 			/* this directory already has a parent, it cannot
 			have another one; bail out */
-			libsqfs_image_flag_error(parent->image, "Directory can have only one parent directory", false);
+			libsqfs_image_flag_error(parent->base.image, "Directory can have only one parent directory", false);
 			return false;
 		}
 		((libsqfs_directory_inode_t) inode)->parent = parent;
-		parent->nlink++;
+		parent->base.nlink++;
 	}
 	
 	libsqfs_directory_entry * entry = malloc(sizeof(*entry));
 	if (!entry) {
-		libsqfs_image_out_of_memory(parent->image, false);
+		libsqfs_image_out_of_memory(parent->base.image, false);
 		return false;
 	}
 	
 	entry->name = strdup(name);
 	if (!entry->name) {
 		free(entry);
-		libsqfs_image_out_of_memory(parent->image, false);
+		libsqfs_image_out_of_memory(parent->base.image, false);
 		return false;
 	}
 	entry->encoded_size = 0;

@@ -245,7 +245,7 @@ libsqfs_image_set_root(libsqfs_image_t image, libsqfs_directory_inode_t root)
 {
 	if (image->root || image->state != libsqfs_image_building) return false;
 	image->root = root;
-	root->nlink++;
+	root->base.nlink++;
 	return true;
 }
 

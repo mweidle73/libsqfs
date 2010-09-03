@@ -82,7 +82,7 @@ libsqfs_inodeattr_destroy(libsqfs_inodeattr_t attr)
 }
 
 void
-libsqfs_inode_init(libsqfs_image_t image, libsqfs_inode_t inode)
+libsqfs_inode_init(libsqfs_image_t image, libsqfs_inode_t inode, libsqfs_inodeattr_t attr)
 {
 	inode->prev = image->inodes.last;
 	inode->next = 0;
@@ -97,6 +97,8 @@ libsqfs_inode_init(libsqfs_image_t image, libsqfs_inode_t inode)
 	inode->inode_table_entry.block = -1;
 	inode->inode_table_entry.offset = -1;
 	inode->encoded_type = 0;
+	inode->attr = attr;
+	inode->nlink = 0;
 }
 
 bool
