@@ -35,6 +35,8 @@ struct _libsqfs_inodeattr {
 	time_t ctime;
 	
 	uint16_t mapped_uid, mapped_gid;
+	
+	libsqfs_xattrset_t xattrset;
 };
 
 void

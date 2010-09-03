@@ -415,29 +415,42 @@ typedef struct _libsqfs_inodeattr * libsqfs_inodeattr_t;
 libsqfs_inodeattr_t
 libsqfs_inodeattr_create_simple(libsqfs_image_t image, uid_t uid, gid_t gid, mode_t mode, time_t ctime);
 
-#if 0
 /**
 	\brief Extended attribute set
 */
-typedef struct _libsqfs_xattrs * libsqfs_xattrs_t;
+typedef struct _libsqfs_xattrset * libsqfs_xattrset_t;
+
+/**
+	\brief Extended attribute
+*/
+typedef struct _libsqfs_xattr * libsqfs_xattr_t;
+
+/**
+	\brief Create extended attribute
+	\param image @c squashfs image handle
+	\param name Name of the attribute
+	\param value Attribute data
+	\param value_size Size of the attribute data
+	\return Extended attribute handle, or NULL on failure with errno set appropriately
+	
+	Create a single extended attribute, i.e. a name/value
+	pair.
+*/
+libsqfs_xattr_t
+libsqfs_xattr_create(libsqfs_image_t image, const char * name, size_t value_size, const void * value);
+
 /**
 	\brief Create extended attribute set
 	\param image @c squashfs image handle
-	\return Extended attribute handle, or NULL on failure with errno set appropriately
+	\param nattrs Number of extended attributes
+	\param attrs Extended attributes
+	\return Extended attribute set handle, or NULL on failure with errno set appropriately
+	
+	Create set of extended attributes, i.e. a collection of
+	name/value pairs (with distinct names).
 */
-libsqfs_xattrs_t
-libsqfs_xattrs_create(libsqfs_image_t image);
-
-/**
-	\brief Add named extended attribute
-	\param xattr Extended attribute set
-	\param name Name of attribute
-	\param value Buffer containing extended attribute data
-	\param value_size size of extended attribute data
-	\return @c true on success
-*/
-bool
-libsqfs_xattrs_add_attribute(libsqfs_xattrs_t xattr, const char * name, const void * value, size_t value_size);
+libsqfs_xattrset_t
+libsqfs_xattrset_create(libsqfs_image_t image, size_t nattrs, libsqfs_xattr_t attrs[const]);
 
 /**
 	\brief Create inode attribute set
@@ -446,13 +459,11 @@ libsqfs_xattrs_add_attribute(libsqfs_xattrs_t xattr, const char * name, const vo
 	\param gid gid
 	\param mode File mode
 	\param ctime Creation time
-	\param xattr Extended attributes
+	\param xattr Extended attributes (may be NULL if there are no extended attributes)
 	\return Attribute handle, or NULL on failure with errno set appropriately
 */
 libsqfs_inodeattr_t
-libsqfs_inodeattr_create_extended(libsqfs_image_t image, uid_t uid, gid_t gid, mode_t mode, time_t ctime, libsqfs_xattrs_t xattr);
-
-#endif
+libsqfs_inodeattr_create_extended(libsqfs_image_t image, uid_t uid, gid_t gid, mode_t mode, time_t ctime, libsqfs_xattrset_t xattr);
 
 /*@}*/
 

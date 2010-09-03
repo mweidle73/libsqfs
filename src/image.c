@@ -134,6 +134,7 @@ libsqfs_image_create(libsqfs_destination_t destination, libsqfs_image_options_t 
 	libsqfs_metatable_init(&image->dir_table, image->options.inode_compression ? image->compressor : 0);
 	libsqfs_metatable_init(&image->inode_table, image->options.inode_compression ? image->compressor : 0);
 	libsqfs_export_table_init(&image->export_table);
+	libsqfs_xattr_table_init(&image->xattr_table, image->options.data_compression ? image->compressor : 0);
 	
 	libsqfs_threadpool_init(&image->threadpool);
 	
@@ -178,6 +179,7 @@ libsqfs_image_close(libsqfs_image_t image)
 		inodeattr = next;
 	}
 	
+	libsqfs_xattr_table_fini(&image->xattr_table);
 	libsqfs_bulkdata_fini(&image->bulkdata);
 	libsqfs_metatable_fini(&image->dir_table);
 	libsqfs_metatable_fini(&image->inode_table);
@@ -212,6 +214,7 @@ libsqfs_image_finalize(libsqfs_image_t image)
 	success = success && libsqfs_bulkdata_write_fragment_table(&image->bulkdata, image);
 	if (image->options.exportable)
 		success = success && libsqfs_export_table_write(image, &image->export_table);
+	success = success && libsqfs_xattr_table_write(&image->xattr_table, image);
 	success = success && libsqfs_idtable_write(image, &image->idtable);
 	success = success && libsqfs_write_superblock(image);
 	

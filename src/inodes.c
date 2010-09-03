@@ -60,6 +60,18 @@ libsqfs_inodeattr_create_simple(libsqfs_image_t image, uid_t uid, gid_t gid, mod
 		return 0;
 	}
 	
+	attr->xattrset = 0;
+	
+	return attr;
+}
+
+libsqfs_inodeattr_t
+libsqfs_inodeattr_create_extended(libsqfs_image_t image, uid_t uid, gid_t gid, mode_t mode, time_t ctime, libsqfs_xattrset_t xattrset)
+{
+	libsqfs_inodeattr_t attr = libsqfs_inodeattr_create_simple(image, uid, gid, mode, ctime);
+	if (!attr) return 0;
+	
+	attr->xattrset = xattrset;
 	return attr;
 }
 

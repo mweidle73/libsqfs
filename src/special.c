@@ -36,23 +36,28 @@ libsqfs_symlink_inode_serialize(libsqfs_inode_t inode)
 	libsqfs_symlink_inode_t lnk = (libsqfs_symlink_inode_t) inode;
 	libsqfs_image_t image = lnk->image;
 	
-	lnk->encoded_type = SQUASHFS_SYMLINK_TYPE;
+	if (lnk->attr->xattrset)
+		lnk->encoded_type = SQUASHFS_LSYMLINK_TYPE;
+	else
+		lnk->encoded_type = SQUASHFS_SYMLINK_TYPE;
 	
 	size_t namelen = strlen(lnk->name);
 	
-	struct squashfs_symlink_inode_header hdr;
+	if (lnk->encoded_type == SQUASHFS_SYMLINK_TYPE) {
+		struct squashfs_symlink_inode_header hdr;
 	
-	hdr.inode_type = cpu_to_le16(lnk->encoded_type);
-	hdr.mode = cpu_to_le16(lnk->attr->mode);
-	hdr.uid = cpu_to_le16(lnk->attr->mapped_uid);
-	hdr.guid = cpu_to_le16(lnk->attr->mapped_gid);
-	hdr.mtime = cpu_to_le32(lnk->attr->ctime);
-	hdr.inode_number = cpu_to_le32(lnk->inode_number);
-	hdr.nlink = cpu_to_le32(lnk->nlink);
-	
-	hdr.symlink_size = cpu_to_le32(namelen);
-	
-	if (!libsqfs_metatable_append(&image->inode_table, &hdr, sizeof(hdr), &lnk->inode_table_entry)) return false;
+		hdr.inode_type = cpu_to_le16(lnk->encoded_type);
+		hdr.mode = cpu_to_le16(lnk->attr->mode);
+		hdr.uid = cpu_to_le16(lnk->attr->mapped_uid);
+		hdr.guid = cpu_to_le16(lnk->attr->mapped_gid);
+		hdr.mtime = cpu_to_le32(lnk->attr->ctime);
+		hdr.inode_number = cpu_to_le32(lnk->inode_number);
+		hdr.nlink = cpu_to_le32(lnk->nlink);
+		
+		hdr.symlink_size = cpu_to_le32(namelen);
+		
+		if (!libsqfs_metatable_append(&image->inode_table, &hdr, sizeof(hdr), &lnk->inode_table_entry)) return false;
+	}
 	if (!libsqfs_metatable_append(&image->inode_table, lnk->name, namelen, 0)) return false;
 	
 	return true;
@@ -114,26 +119,51 @@ libsqfs_device_inode_serialize(libsqfs_inode_t inode)
 	libsqfs_device_inode_t dev = (libsqfs_device_inode_t) inode;
 	libsqfs_image_t image = dev->image;
 	
-	struct squashfs_dev_inode_header hdr;
-	
-	if (dev->type == 'c')
-		dev->encoded_type = SQUASHFS_CHRDEV_TYPE;
-	else
-		dev->encoded_type = SQUASHFS_BLKDEV_TYPE;
-	
-	hdr.inode_type = cpu_to_le16(dev->encoded_type);
-	hdr.mode = cpu_to_le16(dev->attr->mode);
-	hdr.uid = cpu_to_le16(dev->attr->mapped_uid);
-	hdr.guid = cpu_to_le16(dev->attr->mapped_gid);
-	hdr.mtime = cpu_to_le32(dev->attr->ctime);
-	hdr.inode_number = cpu_to_le32(dev->inode_number);
-	hdr.nlink = cpu_to_le32(dev->nlink);
-	
-	hdr.rdev = cpu_to_le32(
-		(dev->major << 8) | (dev->minor & 0xff) | ((dev->minor & ~0xff) << 12)
-	);
-	
-	if (!libsqfs_metatable_append(&image->inode_table, &hdr, sizeof(hdr), &dev->inode_table_entry)) return false;
+	if (!dev->attr->xattrset) {
+		struct squashfs_dev_inode_header hdr;
+		
+		if (dev->type == 'c')
+			dev->encoded_type = SQUASHFS_CHRDEV_TYPE;
+		else
+			dev->encoded_type = SQUASHFS_BLKDEV_TYPE;
+		
+		hdr.inode_type = cpu_to_le16(dev->encoded_type);
+		hdr.mode = cpu_to_le16(dev->attr->mode);
+		hdr.uid = cpu_to_le16(dev->attr->mapped_uid);
+		hdr.guid = cpu_to_le16(dev->attr->mapped_gid);
+		hdr.mtime = cpu_to_le32(dev->attr->ctime);
+		hdr.inode_number = cpu_to_le32(dev->inode_number);
+		hdr.nlink = cpu_to_le32(dev->nlink);
+		
+		hdr.rdev = cpu_to_le32(
+			(dev->major << 8) | (dev->minor & 0xff) | ((dev->minor & ~0xff) << 12)
+		);
+		
+		if (!libsqfs_metatable_append(&image->inode_table, &hdr, sizeof(hdr), &dev->inode_table_entry)) return false;
+	} else {
+		struct squashfs_ldev_inode_header hdr;
+		
+		if (dev->type == 'c')
+			dev->encoded_type = SQUASHFS_LCHRDEV_TYPE;
+		else
+			dev->encoded_type = SQUASHFS_LBLKDEV_TYPE;
+		
+		hdr.inode_type = cpu_to_le16(dev->encoded_type);
+		hdr.mode = cpu_to_le16(dev->attr->mode);
+		hdr.uid = cpu_to_le16(dev->attr->mapped_uid);
+		hdr.guid = cpu_to_le16(dev->attr->mapped_gid);
+		hdr.mtime = cpu_to_le32(dev->attr->ctime);
+		hdr.inode_number = cpu_to_le32(dev->inode_number);
+		hdr.nlink = cpu_to_le32(dev->nlink);
+		
+		hdr.rdev = cpu_to_le32(
+			(dev->major << 8) | (dev->minor & 0xff) | ((dev->minor & ~0xff) << 12)
+		);
+		
+		hdr.xattr = cpu_to_le32(dev->attr->xattrset->id);
+		
+		if (!libsqfs_metatable_append(&image->inode_table, &hdr, sizeof(hdr), &dev->inode_table_entry)) return false;
+	}
 	
 	return true;
 }
@@ -186,20 +216,41 @@ libsqfs_fifo_inode_serialize(libsqfs_inode_t inode)
 {
 	libsqfs_fifo_inode_t fifo = (libsqfs_fifo_inode_t) inode;
 	libsqfs_image_t image = fifo->image;
-	struct squashfs_ipc_inode_header hdr;
 
-	fifo->encoded_type = SQUASHFS_FIFO_TYPE;
-
-	hdr.inode_type = cpu_to_le16(fifo->encoded_type);
-	hdr.mode = cpu_to_le16(fifo->attr->mode);
-	hdr.uid = cpu_to_le16(fifo->attr->mapped_uid);
-	hdr.guid = cpu_to_le16(fifo->attr->mapped_gid);
-	hdr.mtime = cpu_to_le32(fifo->attr->ctime);
-	hdr.inode_number = cpu_to_le32(fifo->inode_number);
-	hdr.nlink = cpu_to_le32(fifo->nlink);
-
-	return libsqfs_metatable_append(&image->inode_table, &hdr, sizeof(hdr),
-					&fifo->inode_table_entry);
+	if (fifo->attr->xattrset)
+		fifo->encoded_type = SQUASHFS_LFIFO_TYPE;
+	else
+		fifo->encoded_type = SQUASHFS_FIFO_TYPE;
+	
+	if (fifo->encoded_type == SQUASHFS_FIFO_TYPE) {
+		struct squashfs_ipc_inode_header hdr;
+		
+		hdr.inode_type = cpu_to_le16(fifo->encoded_type);
+		hdr.mode = cpu_to_le16(fifo->attr->mode);
+		hdr.uid = cpu_to_le16(fifo->attr->mapped_uid);
+		hdr.guid = cpu_to_le16(fifo->attr->mapped_gid);
+		hdr.mtime = cpu_to_le32(fifo->attr->ctime);
+		hdr.inode_number = cpu_to_le32(fifo->inode_number);
+		hdr.nlink = cpu_to_le32(fifo->nlink);
+		
+		return libsqfs_metatable_append(&image->inode_table, &hdr, sizeof(hdr), &fifo->inode_table_entry);
+	} else {
+		struct squashfs_lipc_inode_header hdr;
+		
+		hdr.inode_type = cpu_to_le16(fifo->encoded_type);
+		hdr.mode = cpu_to_le16(fifo->attr->mode);
+		hdr.uid = cpu_to_le16(fifo->attr->mapped_uid);
+		hdr.guid = cpu_to_le16(fifo->attr->mapped_gid);
+		hdr.mtime = cpu_to_le32(fifo->attr->ctime);
+		hdr.inode_number = cpu_to_le32(fifo->inode_number);
+		hdr.nlink = cpu_to_le32(fifo->nlink);
+		if (fifo->attr->xattrset)
+			hdr.xattr = cpu_to_le32(fifo->attr->xattrset->id);
+		else
+			hdr.xattr = cpu_to_le32(-1);
+		
+		return libsqfs_metatable_append(&image->inode_table, &hdr, sizeof(hdr), &fifo->inode_table_entry);
+	}
 }
 
 static void

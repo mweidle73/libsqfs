@@ -37,6 +37,7 @@
 #include "datasource.h"
 #include "threadpool.h"
 #include "bulkdata.h"
+#include "xattrs.h"
 
 /* destinations */
 
@@ -125,6 +126,7 @@ struct _libsqfs_image {
 	libsqfs_metatable inode_table;
 	libsqfs_metatable dir_table;
 	libsqfs_export_table export_table;
+	libsqfs_xattr_table xattr_table;
 	
 	libsqfs_compressor_instance * compressor;
 	

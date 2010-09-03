@@ -279,7 +279,10 @@ libsqfs_directory_inode_encode(libsqfs_directory_inode_t dir, libsqfs_metatable 
 		hdr.i_count = cpu_to_le16(dir->indexed_count);
 		hdr.offset = cpu_to_le16(dir->dir_table_entry.offset);
 		
-		hdr.xattr = cpu_to_le32(-1);
+		if (dir->attr->xattrset)
+			hdr.xattr = cpu_to_le32(dir->attr->xattrset->id);
+		else
+			hdr.xattr = cpu_to_le32(-1);
 		
 		if (!libsqfs_metatable_append(tab, &hdr, sizeof(hdr), &dir->inode_table_entry))
 			return false;
@@ -332,6 +335,8 @@ libsqfs_directory_serialize(libsqfs_inode_t inode)
 	if (dir->indexed_count || dir->encoded_entries_size > USHRT_MAX-3)
 		dir->encoded_type = SQUASHFS_LDIR_TYPE;
 	
+	if (dir->attr->xattrset)
+		dir->encoded_type = SQUASHFS_LDIR_TYPE;
 	/* now encode the directory inode itself, referencing the previously
 	encoded data in the directory table */
 	if (!libsqfs_directory_inode_encode(dir, &image->inode_table))

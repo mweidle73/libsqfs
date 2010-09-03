@@ -3,7 +3,7 @@ Section: libs
 Priority: optional
 Maintainer: Helge Bahmann <helge.bahmann@secunet.com>
 Standards-Version: 3.8.3
-Build-Depends: debhelper (>= 7.0.15), zlib1g-dev (>=1.2.3.3)
+Build-Depends: debhelper (>= 7.0.15), zlib1g-dev (>=1.2.3.3), libattr1-dev(>=2.4.43)
 Homepage: http://gitorious.org/libsqfs
 
 Package: libsqfs

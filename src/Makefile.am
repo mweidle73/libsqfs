@@ -15,6 +15,7 @@ libsqfs_la_SOURCES = \
 	regular.c \
 	special.c \
 	export.c \
+	xattrs.c \
 	compressor.c \
 	compressor_zlib.c \
 	threadpool.c

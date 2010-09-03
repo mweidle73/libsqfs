@@ -61,7 +61,7 @@ libsqfs_write_superblock(libsqfs_image_t image)
 	sb.root_inode = cpu_to_le64(libsqfs_encoded_inode(libsqfs_directory_inode_downcast(image->root)));
 	sb.bytes_used = cpu_to_le64(image->size);
 	sb.id_table_start = cpu_to_le64(image->idtable.offset);
-	sb.xattr_table_start = cpu_to_le64(-1 /* FIXME: no xattrs yet */);
+	sb.xattr_id_table_start = cpu_to_le64(image->xattr_table.offset);
 	sb.inode_table_start = cpu_to_le64(image->inode_table.offset);
 	sb.directory_table_start = cpu_to_le64(image->dir_table.offset);
 	sb.fragment_table_start = cpu_to_le64(image->bulkdata.frag_table_loc);

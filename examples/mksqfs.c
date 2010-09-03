@@ -3,6 +3,7 @@
  *
  * Copyright (c) 2010
  * secunet Security Networks AG, Helge Bahmann <helge.bahmann@secunet.com>
+ * Stephen Hemminger <stephen.hemminger@vyatta.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -24,6 +25,8 @@
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <attr/xattr.h>
+
 #include <unistd.h>
 #include <dirent.h>
 
@@ -68,7 +71,7 @@ inode_cache_insert(dev_t dev, ino_t ino, libsqfs_inode_t inode)
 	*bucket = tmp;
 }
 
-libsqfs_regular_inode_t
+static libsqfs_regular_inode_t
 add_file(libsqfs_image_t image, const char pathname[], libsqfs_inodeattr_t attr)
 {
 	libsqfs_data_t data = libsqfs_data_create_from_file(image, pathname);
@@ -77,7 +80,7 @@ add_file(libsqfs_image_t image, const char pathname[], libsqfs_inodeattr_t attr)
 	return file;
 }
 
-libsqfs_symlink_inode_t
+static libsqfs_symlink_inode_t
 add_symlink(libsqfs_image_t image, const char pathname[], libsqfs_inodeattr_t attr)
 {
 	char target[1024];
@@ -86,13 +89,13 @@ add_symlink(libsqfs_image_t image, const char pathname[], libsqfs_inodeattr_t at
 	return libsqfs_symlink_inode_create(image, attr, target);
 }
 
-libsqfs_fifo_inode_t
+static libsqfs_fifo_inode_t
 add_fifo(libsqfs_image_t image, const char pathname[], libsqfs_inodeattr_t attr)
 {
 	return libsqfs_fifo_inode_create(image, attr);
 }
 
-libsqfs_device_inode_t
+static libsqfs_device_inode_t
 add_device(libsqfs_image_t image, const char pathname[], libsqfs_inodeattr_t attr)
 {
 	struct stat st;
@@ -101,6 +104,64 @@ add_device(libsqfs_image_t image, const char pathname[], libsqfs_inodeattr_t att
 		return libsqfs_device_inode_create(image, attr, 'c', major(st.st_rdev), minor(st.st_rdev));
 	else
 		return libsqfs_device_inode_create(image, attr, 'b', major(st.st_rdev), minor(st.st_rdev));
+}
+
+
+static libsqfs_xattrset_t
+get_xattrset(libsqfs_image_t image, const char *path)
+{
+	ssize_t xattr_size = listxattr(path, NULL, 0);
+	if (xattr_size <= 0)
+		return NULL;
+
+	char xattr_buf[xattr_size + 1];
+	xattr_size = listxattr(path, xattr_buf, xattr_size+1);
+
+	const char *name = xattr_buf;
+	size_t name_len;
+	size_t bufsize = 128;
+	void *buf = malloc(bufsize);
+	
+	libsqfs_xattr_t * attrs = 0;
+	size_t nattrs = 0;
+
+	do {
+		ssize_t val_len;
+	retry:
+		val_len = getxattr(path, name, buf, bufsize);
+		if (val_len < 0) {
+			if (errno == ERANGE) {
+				bufsize *= 2;
+				buf = realloc(buf, bufsize);
+				goto retry;
+			}
+
+			fprintf(stderr, "%s: getxattr(%s) failed: %s\n",
+				path, name, strerror(errno));
+			abort();
+		}
+
+		attrs = realloc(attrs, (nattrs + 1) * sizeof(attrs[0]));
+		attrs[nattrs++] = libsqfs_xattr_create(image, name, val_len, buf);
+
+		name_len = strlen(name);
+		name += name_len + 1;
+	} while ((xattr_size -= name_len + 1) > 0);
+	
+	libsqfs_xattrset_t xattrset = libsqfs_xattrset_create(image, nattrs, attrs);
+	
+	free(buf);
+	free(attrs);
+	return xattrset;
+}
+
+static libsqfs_inodeattr_t
+get_inode_attrs(libsqfs_image_t image, const struct stat * st, const char * path)
+{
+	libsqfs_xattrset_t xattrset = get_xattrset(image, path);
+	return libsqfs_inodeattr_create_extended(image,
+		st->st_uid, st->st_gid,
+		st->st_mode & 0777, st->st_ctime, xattrset);
 }
 
 typedef struct dir_entry_name dir_entry_name;
@@ -153,8 +214,7 @@ add_directory(libsqfs_image_t image, const char pathname[], libsqfs_inodeattr_t 
 		if (S_ISREG(current->st.st_mode)) {
 			libsqfs_inode_t inode = inode_cache_lookup(current->st.st_dev, current->st.st_ino);
 			if (!inode) {
-				attr = libsqfs_inodeattr_create_simple(image, current->st.st_uid, current->st.st_gid, current->st.st_mode & 0777, current->st.st_ctime);
-				
+				attr = get_inode_attrs(image, &current->st, current->path);
 				inode = libsqfs_regular_inode_downcast(add_file(image, current->path, attr));
 				inode_cache_insert(current->st.st_dev, current->st.st_ino, inode);
 			} 
@@ -169,7 +229,7 @@ add_directory(libsqfs_image_t image, const char pathname[], libsqfs_inodeattr_t 
 		if (!S_ISREG(current->st.st_mode)) {
 			libsqfs_inode_t sub;
 
-			attr = libsqfs_inodeattr_create_simple(image, current->st.st_uid, current->st.st_gid, current->st.st_mode & 0777, current->st.st_ctime);
+			attr = get_inode_attrs(image, &current->st, current->path);
 			if (S_ISDIR(current->st.st_mode))
 				sub = libsqfs_directory_inode_downcast(add_directory(image, current->path, attr));
 			else if (S_ISLNK(current->st.st_mode))

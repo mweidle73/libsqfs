@@ -50,6 +50,8 @@ libsqfs_regular_inode_serialize(libsqfs_inode_t inode)
 	reg->encoded_type = SQUASHFS_FILE_TYPE;
 	if (reg->sparse_size || reg->nlink != 1 || reg->file_size > UINT_MAX)
 		reg->encoded_type = SQUASHFS_LREG_TYPE;
+	if (reg->attr->xattrset)
+		reg->encoded_type = SQUASHFS_LREG_TYPE;
 	if (reg->nblocks && reg->blocks[0]->dst.offset > UINT_MAX)
 		reg->encoded_type = SQUASHFS_LREG_TYPE;
 	
@@ -99,7 +101,10 @@ libsqfs_regular_inode_serialize(libsqfs_inode_t inode)
 			hdr.fragment = cpu_to_le32(-1);
 			hdr.offset = cpu_to_le32(0);
 		}
-		hdr.xattr = cpu_to_le32(-1);
+		if (reg->attr->xattrset)
+			hdr.xattr = cpu_to_le32(reg->attr->xattrset->id);
+		else
+			hdr.xattr = cpu_to_le32(-1);
 		if (!libsqfs_metatable_append(&image->inode_table, &hdr, sizeof(hdr), &reg->inode_table_entry))
 			return false;
 	}

@@ -3,3 +3,4 @@ dir-layout
 simple-file
 special-files
 mksqfs
+file-xattrs
