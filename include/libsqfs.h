@@ -473,6 +473,27 @@ libsqfs_inodeattr_create_extended(libsqfs_image_t image, uid_t uid, gid_t gid, m
 typedef struct _libsqfs_inode * libsqfs_inode_t;
 
 /**
+	\brief Class descriptor of an inode
+	
+	Possible values are \ref libsqfs_regular_inode_class ,
+	\ref libsqfs_directory_inode_class ,
+	\ref libsqfs_device_inode_class ,
+	\ref libsqfs_symlink_inode_class ,
+	\ref libsqfs_fifo_inode_class .
+*/
+typedef const struct _libsqfs_inode_vmt * libsqfs_inode_class_t;
+
+/**
+	\brief Query inode class
+	\param inode A generic @c libsqfs inode
+	\return Class descriptor of inode
+	
+	Return type of inode.
+*/
+libsqfs_inode_class_t
+libsqfs_inode_get_class(libsqfs_inode_t inode);
+
+/**
 	\defgroup regular_inodes Regular (aka "file") inodes
 */
 /*@{*/
@@ -576,6 +597,15 @@ libsqfs_data_create_compound(libsqfs_image_t image, size_t npieces,
 typedef struct _libsqfs_regular_inode * libsqfs_regular_inode_t;
 
 /**
+	\internal \brief Virtual methods table -- don't touch
+*/
+extern const struct _libsqfs_inode_vmt libsqfs_regular_inode_vmt;
+/**
+	\brief Class handle for regular inodes
+*/
+static const libsqfs_inode_class_t libsqfs_regular_inode_class = &libsqfs_regular_inode_vmt;
+
+/**
 	\brief Create regular ("file") inode
 	\param image @c squashfs image handle
 	\param attr Attributes
@@ -597,6 +627,23 @@ libsqfs_regular_inode_create(libsqfs_image_t image, libsqfs_inodeattr_t attr, li
 libsqfs_inode_t
 libsqfs_regular_inode_downcast(libsqfs_regular_inode_t inode);
 
+/**
+	\brief Reinterpret generic inode as regular ("file") inode
+	\param inode Generic inode
+	\return The same inode, reinterpreted as file inode or NULL
+	
+	Return the given inode reinterpreted as regular inode if
+	possible, or NULL.
+*/
+static inline libsqfs_regular_inode_t
+libsqfs_regular_inode_cast(libsqfs_inode_t inode)
+{
+	if (libsqfs_inode_get_class(inode) == libsqfs_regular_inode_class)
+		return (libsqfs_regular_inode_t) inode;
+	else
+		return 0;
+}
+
 /*@}*/
 
 /**
@@ -608,6 +655,15 @@ libsqfs_regular_inode_downcast(libsqfs_regular_inode_t inode);
 	\brief Directory inode
 */
 typedef struct _libsqfs_directory_inode * libsqfs_directory_inode_t;
+
+/**
+	\internal \brief Virtual methods table -- don't touch
+*/
+extern const struct _libsqfs_inode_vmt libsqfs_directory_inode_vmt;
+/**
+	\brief Class handle for directory inodes
+*/
+static const libsqfs_inode_class_t libsqfs_directory_inode_class = &libsqfs_directory_inode_vmt;
 
 /**
 	\brief Create directory inode
@@ -641,6 +697,32 @@ libsqfs_directory_add_entry(libsqfs_directory_inode_t parent, const char * name,
 libsqfs_inode_t
 libsqfs_directory_inode_downcast(libsqfs_directory_inode_t inode);
 
+/**
+	\brief Retrieve inode associated with name
+	\param dir Directory inode
+	\param name Name of the directory entry
+	\return Inode associated with the directory entry, or NULL
+*/
+libsqfs_inode_t
+libsqfs_directory_inode_lookup(libsqfs_directory_inode_t dir, const char * name);
+
+/**
+	\brief Reinterpret generic inode as directory inode
+	\param inode Generic inode
+	\return The same inode, reinterpreted as directory inode or NULL
+	
+	Return the given inode reinterpreted as directory inode if
+	possible, or NULL.
+*/
+static inline libsqfs_directory_inode_t
+libsqfs_directory_inode_cast(libsqfs_inode_t inode)
+{
+	if (libsqfs_inode_get_class(inode) == libsqfs_directory_inode_class)
+		return (libsqfs_directory_inode_t) inode;
+	else
+		return 0;
+}
+
 /*@}*/
 
 /**
@@ -652,6 +734,15 @@ libsqfs_directory_inode_downcast(libsqfs_directory_inode_t inode);
 	\brief Symlink inode
 */
 typedef struct _libsqfs_symlink_inode * libsqfs_symlink_inode_t;
+
+/**
+	\internal \brief Virtual methods table -- don't touch
+*/
+extern const struct _libsqfs_inode_vmt libsqfs_symlink_inode_vmt;
+/**
+	\brief Class handle for symlink inodes
+*/
+static const libsqfs_inode_class_t libsqfs_symlink_inode_class = &libsqfs_symlink_inode_vmt;
 
 /**
 	\brief Create symlink inode
@@ -671,6 +762,23 @@ libsqfs_symlink_inode_create(libsqfs_image_t image, libsqfs_inodeattr_t attr, co
 libsqfs_inode_t
 libsqfs_symlink_inode_downcast(libsqfs_symlink_inode_t inode);
 
+/**
+	\brief Reinterpret generic inode as symlink inode
+	\param inode Generic inode
+	\return The same inode, reinterpreted as symlink inode or NULL
+	
+	Return the given inode reinterpreted as symlink inode if
+	possible, or NULL.
+*/
+static inline libsqfs_symlink_inode_t
+libsqfs_symlink_inode_cast(libsqfs_inode_t inode)
+{
+	if (libsqfs_inode_get_class(inode) == libsqfs_symlink_inode_class)
+		return (libsqfs_symlink_inode_t) inode;
+	else
+		return 0;
+}
+
 /*@}*/
 
 /**
@@ -682,6 +790,15 @@ libsqfs_symlink_inode_downcast(libsqfs_symlink_inode_t inode);
 	\brief Device inode
 */
 typedef struct _libsqfs_device_inode * libsqfs_device_inode_t;
+
+/**
+	\internal \brief Virtual methods table -- don't touch
+*/
+extern const struct _libsqfs_inode_vmt libsqfs_device_inode_vmt;
+/**
+	\brief Class handle for device inodes
+*/
+static const libsqfs_inode_class_t libsqfs_device_inode_class = &libsqfs_device_inode_vmt;
 
 /**
 	\brief Create device inode
@@ -703,6 +820,23 @@ libsqfs_device_inode_create(libsqfs_image_t image, libsqfs_inodeattr_t attr, cha
 libsqfs_inode_t
 libsqfs_device_inode_downcast(libsqfs_device_inode_t inode);
 
+/**
+	\brief Reinterpret generic inode as device inode
+	\param inode Generic inode
+	\return The same inode, reinterpreted as device inode or NULL
+	
+	Return the given inode reinterpreted as device inode if
+	possible, or NULL.
+*/
+static inline libsqfs_device_inode_t
+libsqfs_device_inode_cast(libsqfs_inode_t inode)
+{
+	if (libsqfs_inode_get_class(inode) == libsqfs_device_inode_class)
+		return (libsqfs_device_inode_t) inode;
+	else
+		return 0;
+}
+
 /*@}*/
 
 /**
@@ -714,6 +848,15 @@ libsqfs_device_inode_downcast(libsqfs_device_inode_t inode);
 	\brief FIFO inode
 */
 typedef struct _libsqfs_fifo_inode * libsqfs_fifo_inode_t;
+
+/**
+	\internal \brief Virtual methods table -- don't touch
+*/
+extern const struct _libsqfs_inode_vmt libsqfs_fifo_inode_vmt;
+/**
+	\brief Class handle for fifo inodes
+*/
+static const libsqfs_inode_class_t libsqfs_fifo_inode_class = &libsqfs_fifo_inode_vmt;
 
 /**
 	\brief Create FIFO inode
@@ -731,6 +874,23 @@ libsqfs_fifo_inode_create(libsqfs_image_t image, libsqfs_inodeattr_t attr);
 */
 libsqfs_inode_t
 libsqfs_fifo_inode_downcast(libsqfs_fifo_inode_t inode);
+
+/**
+	\brief Reinterpret generic inode as fifo inode
+	\param inode Generic inode
+	\return The same inode, reinterpreted as fifo inode or NULL
+	
+	Return the given inode reinterpreted as fifo inode if
+	possible, or NULL.
+*/
+static inline libsqfs_fifo_inode_t
+libsqfs_fifo_inode_cast(libsqfs_inode_t inode)
+{
+	if (libsqfs_inode_get_class(inode) == libsqfs_fifo_inode_class)
+		return (libsqfs_fifo_inode_t) inode;
+	else
+		return 0;
+}
 
 /*@}*/
 

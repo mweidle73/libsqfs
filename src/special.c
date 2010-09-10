@@ -77,7 +77,7 @@ libsqfs_symlink_inode_destroy(libsqfs_inode_t inode)
 	free(lnk);
 }
 
-static const libsqfs_inode_vmt libsqfs_symlink_inode_vmt = {
+const libsqfs_inode_vmt libsqfs_symlink_inode_vmt = {
 	.serialize = &libsqfs_symlink_inode_serialize,
 	.destroy = &libsqfs_symlink_inode_destroy
 };
@@ -179,7 +179,7 @@ libsqfs_device_inode_destroy(libsqfs_inode_t inode)
 	free(dev);
 }
 
-static const libsqfs_inode_vmt libsqfs_device_inode_vmt = {
+const libsqfs_inode_vmt libsqfs_device_inode_vmt = {
 	.serialize = &libsqfs_device_inode_serialize,
 	.destroy = &libsqfs_device_inode_destroy
 };
@@ -262,7 +262,7 @@ libsqfs_fifo_inode_destroy(libsqfs_inode_t inode)
 	free(fifo);
 }
 
-static const libsqfs_inode_vmt libsqfs_fifo_inode_vmt = {
+const libsqfs_inode_vmt libsqfs_fifo_inode_vmt = {
 	.serialize = &libsqfs_fifo_inode_serialize,
 	.destroy = &libsqfs_fifo_inode_destroy
 };

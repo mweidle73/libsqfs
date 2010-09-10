@@ -121,7 +121,7 @@ libsqfs_regular_inode_serialize(libsqfs_inode_t inode)
 	return libsqfs_metatable_append(&image->inode_table, block_info, sizeof(block_info), 0);
 }
 
-static const libsqfs_inode_vmt libsqfs_regular_inode_vmt = {
+const libsqfs_inode_vmt libsqfs_regular_inode_vmt = {
 	.serialize = &libsqfs_regular_inode_serialize,
 	.destroy = &libsqfs_regular_inode_destroy
 };

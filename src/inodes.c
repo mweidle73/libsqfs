@@ -107,3 +107,9 @@ libsqfs_inode_serialize(libsqfs_inode_t inode)
 	if (inode->encoded_type != 0) return true;
 	return inode->vmt->serialize(inode);
 }
+
+libsqfs_inode_class_t
+libsqfs_inode_get_class(libsqfs_inode_t inode)
+{
+	return inode->vmt;
+}

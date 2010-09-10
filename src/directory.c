@@ -420,6 +420,17 @@ libsqfs_directory_add_entry(libsqfs_directory_inode_t parent, const char * name,
 }
 
 libsqfs_inode_t
+libsqfs_directory_inode_lookup(libsqfs_directory_inode_t dir, const char * name)
+{
+	libsqfs_directory_entry * entry = dir->entries.first;
+	while(entry && (strcmp(entry->name, name) != 0))
+		entry = entry->next;
+	
+	if (entry) return entry->inode;
+	return 0;
+}
+
+libsqfs_inode_t
 libsqfs_directory_inode_downcast(libsqfs_directory_inode_t inode)
 {
 	return (libsqfs_inode_t) inode;
