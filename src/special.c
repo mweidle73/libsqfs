@@ -187,7 +187,10 @@ const libsqfs_inode_vmt libsqfs_device_inode_vmt = {
 libsqfs_device_inode_t
 libsqfs_device_inode_create(libsqfs_image_t image, libsqfs_inodeattr_t attr, char type, unsigned int major, unsigned int minor)
 {
-	if ((type != 'c') && (type != 'b')) return 0;
+	if ((type != 'c') && (type != 'b')) {
+		libsqfs_image_flag_error(image, "Unknown device type", false);
+		return 0;
+	}
 	libsqfs_device_inode_t dev = malloc(sizeof(*dev));
 	if (!dev) {
 		libsqfs_image_out_of_memory(image, false);
