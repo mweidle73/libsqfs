@@ -1,4 +1,7 @@
-SUBDIRS = src examples
+if BUILD_EXAMPLES
+MAYBE_EXAMPLES = examples
+endif
+SUBDIRS = src $(MAYBE_EXAMPLES)
 
 lib_LTdir = $(libdir)
 

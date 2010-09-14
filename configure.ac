@@ -14,6 +14,10 @@ AM_CFLAGS="-Wall -Werror"
 CWARNFLAGS="-Wall -Werror"
 AC_SUBST(CWARNFLAGS)
 
+AC_ARG_ENABLE(examples, AS_HELP_STRING([--enable-examples], [Build example programs (default: enabled)]),
+	[ENABLE_EXAMPLES=$enableval], [ENABLE_EXAMPLES=yes])
+AM_CONDITIONAL([BUILD_EXAMPLES], [test "x$ENABLE_EXAMPLES" = "xyes"])
+
 AC_CONFIG_FILES([Makefile
                  src/Makefile
                  examples/Makefile
