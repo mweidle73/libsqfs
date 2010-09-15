@@ -176,6 +176,12 @@ libsqfs_directory_encode(libsqfs_directory_inode_t dir, libsqfs_metatable * tab)
 	dir->encoded_entries_size = offset;
 	
 	libsqfs_metatable_entry * pos = &dir->dir_table_entry;
+	/* write explicit zero block/offset in case there is no
+	directory entry at all (kernel squashfs driver does not
+	care, but "unsquashfs" is quite unhappy if there are
+	garbage values contained here for empty directories) */
+	pos->block = 0;
+	pos->offset = 0;
 	/* write out everything; the memory allocated for holding the encoded
 	representations can safely be discarded now */
 	entry = dir->entries.first;
