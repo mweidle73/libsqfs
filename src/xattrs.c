@@ -203,6 +203,10 @@ libsqfs_xattr_table_fini(libsqfs_xattr_table * tab)
 bool
 libsqfs_xattr_table_write(libsqfs_xattr_table * tab, libsqfs_image_t image)
 {
+	if (tab->nids == 0) {
+		tab->offset = (libsqfs_off_t)-1;
+		return true;
+	}
 	/* layout of the xattr area is as follows:
 	
 	+-------------------+
