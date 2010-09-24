@@ -501,7 +501,7 @@ libsqfs_closing_piece_assign(libsqfs_chunk * chunk, libsqfs_image_t image)
 		libsqfs_chunk_workq_push_front(&piece->bulkdata->compressq, chunk);
 	} else {
 		piece->state = libsqfs_chunk_writable;
-		libsqfs_chunk_mark_finished(chunk);
+		libsqfs_chunk_try_writeout(chunk);
 	}
 	return true;
 }
@@ -739,9 +739,9 @@ libsqfs_bulkdata_seal(libsqfs_bulkdata * bd)
 		
 		libsqfs_fragment_piece * piece = libsqfs_closing_piece_create(bd);
 		if (!piece) return false;
-		libsqfs_bulkdata_enqueue_piece(bd, piece);
 		
 		pthread_mutex_lock(&bd->lock);
+		libsqfs_bulkdata_enqueue_piece_locked(bd, piece);
 		bd->may_add_chunks = false;
 		pthread_cond_signal(&bd->cond);
 	}
