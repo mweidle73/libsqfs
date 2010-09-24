@@ -287,7 +287,6 @@ libsqfs_image_spawn_threads(libsqfs_image_t image, size_t count)
 	while(spawned < count) {
 		if (!libsqfs_threadpool_spawn_worker(&image->threadpool, &libsqfs_image_thread_function, image))
 			break;
-		count--;
 		spawned ++;
 	}
 	
