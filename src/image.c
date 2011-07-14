@@ -118,7 +118,7 @@ libsqfs_image_create(libsqfs_destination_t destination, libsqfs_image_options_t 
 	
 	image->dst = destination;
 	image->size = 0;
-	image->creation_time = 0;
+	image->creation_time = time(NULL);
 	image->state = libsqfs_image_building;
 	image->error_msg = 0;
 	pthread_mutex_init(&image->state_mutex, 0);
