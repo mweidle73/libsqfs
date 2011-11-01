@@ -22,7 +22,7 @@
 libsqfs_compressor_instance *
 libsqfs_compressor_open(const libsqfs_compressor * compr)
 {
-	return compr->open();
+	return compr->open(compr);
 }
 
 ssize_t
@@ -59,8 +59,9 @@ static const libsqfs_compressor_instance_vmt null_compressor_vmt = {
 };
 
 static libsqfs_compressor_instance *
-null_compressor_open(void)
+null_compressor_open(const libsqfs_compressor * self)
 {
+	(void) self;
 	libsqfs_compressor_instance * i = malloc(sizeof(*i));
 	if (!i) return 0;
 	

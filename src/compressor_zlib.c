@@ -22,37 +22,37 @@
 #include <zlib.h>
 
 typedef struct _libsqfs_compressor_instance_zlib {
-	const libsqfs_compressor_instance_vmt * vmt;
+	libsqfs_compressor_instance base;
 	z_stream strm;
 } libsqfs_compressor_instance_zlib;
 
 static void
-libsqfs_compressor_instance_zlib_destroy(libsqfs_compressor_instance * i)
+libsqfs_compressor_instance_zlib_destroy(libsqfs_compressor_instance * self_)
 {
-	libsqfs_compressor_instance_zlib * zi = (libsqfs_compressor_instance_zlib *)i;
-	deflateEnd(&zi->strm);
-	free(zi);
+	libsqfs_compressor_instance_zlib * self = (libsqfs_compressor_instance_zlib *)self_;
+	deflateEnd(&self->strm);
+	free(self);
 }
 
 static ssize_t
-libsqfs_compressor_instance_zlib_compress(libsqfs_compressor_instance * i,
+libsqfs_compressor_instance_zlib_compress(libsqfs_compressor_instance * self_,
 	void * dst, size_t dst_size, const void * src, size_t src_size)
 {
 	ssize_t written = 0;
-	libsqfs_compressor_instance_zlib * zi = (libsqfs_compressor_instance_zlib *)i;
+	libsqfs_compressor_instance_zlib * self = (libsqfs_compressor_instance_zlib *)self_;
 	
-	zi->strm.next_in = (void *)src;
-	zi->strm.avail_in = src_size;
-	zi->strm.next_out = dst;
-	zi->strm.avail_out = dst_size;
+	self->strm.next_in = (void *)src;
+	self->strm.avail_in = src_size;
+	self->strm.next_out = dst;
+	self->strm.avail_out = dst_size;
 	
-	deflate(&zi->strm, Z_NO_FLUSH);
-	int result = deflate(&zi->strm, Z_FINISH);
+	deflate(&self->strm, Z_NO_FLUSH);
+	int result = deflate(&self->strm, Z_FINISH);
 	if (result != Z_STREAM_END)
 		written = -1;
 	else
-		written = zi->strm.total_out;
-	deflateReset(&zi->strm);
+		written = self->strm.total_out;
+	deflateReset(&self->strm);
 	return written;
 }
 
@@ -62,23 +62,24 @@ static const libsqfs_compressor_instance_vmt libsqfs_compressor_instance_zlib_vm
 };
 
 static libsqfs_compressor_instance *
-libsqfs_compressor_zlib_open(void)
+libsqfs_compressor_zlib_open(const libsqfs_compressor * self)
 {
-	libsqfs_compressor_instance_zlib * zi = malloc(sizeof(*zi));
-	if (!zi) return 0;
+	(void) self;
+	libsqfs_compressor_instance_zlib * instance = malloc(sizeof(*instance));
+	if (!instance) return 0;
 	
-	zi->vmt = &libsqfs_compressor_instance_zlib_vmt;
-	zi->strm.zalloc = Z_NULL;
-	zi->strm.zfree = Z_NULL;
-	if (deflateInit(&zi->strm, 9) != Z_OK) {
-		free(zi);
+	instance->base.vmt = &libsqfs_compressor_instance_zlib_vmt;
+	instance->strm.zalloc = Z_NULL;
+	instance->strm.zfree = Z_NULL;
+	if (deflateInit(&instance->strm, 9) != Z_OK) {
+		free(instance);
 		return 0;
 	}
 	
-	return (libsqfs_compressor_instance *) zi;
+	return &instance->base;
 }
 
 const libsqfs_compressor libsqfs_compressor_zlib = {
 	.open = &libsqfs_compressor_zlib_open,
-	.id = 1
+	.id = ZLIB_COMPRESSION
 };

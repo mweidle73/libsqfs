@@ -28,7 +28,7 @@
 typedef struct _libsqfs_compressor_instance libsqfs_compressor_instance;
 
 struct _libsqfs_compressor {
-	libsqfs_compressor_instance * (*open)(void);
+	libsqfs_compressor_instance * (*open)(const libsqfs_compressor * self);
 	int id;
 };
 
