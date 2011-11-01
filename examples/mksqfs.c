@@ -20,12 +20,13 @@
 
 #include <libsqfs.h>
 
+#include <errno.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <attr/xattr.h>
+#include <sys/xattr.h>
 
 #include <unistd.h>
 #include <dirent.h>
