@@ -18,6 +18,9 @@ AC_ARG_ENABLE(examples, AS_HELP_STRING([--enable-examples], [Build example progr
 	[ENABLE_EXAMPLES=$enableval], [ENABLE_EXAMPLES=yes])
 AM_CONDITIONAL([BUILD_EXAMPLES], [test "x$ENABLE_EXAMPLES" = "xyes"])
 
+PKG_CHECK_MODULES([ZLIB], [zlib], [HAVE_ZLIB=yes], [HAVE_ZLIB=no])
+AM_CONDITIONAL([BUILD_ZLIB_COMPRESSOR], [test "x$HAVE_ZLIB" = "xyes"])
+
 AC_CONFIG_FILES([Makefile
                  src/Makefile
                  examples/Makefile
