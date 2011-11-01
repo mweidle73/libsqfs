@@ -107,6 +107,10 @@ typedef enum {
 	libsqfs_fragments_always = 2
 } libsqfs_fragments_option;
 
+typedef struct _libsqfs_compressor libsqfs_compressor;
+extern const libsqfs_compressor libsqfs_compressor_null;
+extern const libsqfs_compressor libsqfs_compressor_zlib;
+
 /** \brief Options influencing on-disk layout of image */
 typedef struct _libsqfs_image_options * libsqfs_image_options_t;
 
@@ -190,6 +194,16 @@ libsqfs_image_options_set_fragment_option(libsqfs_image_options_t options, libsq
 */
 void
 libsqfs_image_options_set_block_size(libsqfs_image_options_t options, size_t block_size);
+
+/**
+	\brief Control compressor type
+	\param options Handle for options
+	\param compressor Compressor
+	
+	Select compressor to be used when compressing data and metadata blocks.
+*/
+void
+libsqfs_image_options_set_compressor(libsqfs_image_options_t options, const struct _libsqfs_compressor * compressor);
 
 /*@}*/
 

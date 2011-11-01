@@ -96,6 +96,12 @@ libsqfs_image_options_set_block_size(libsqfs_image_options_t options, size_t blo
 		options->block_size_log ++;
 }
 
+void
+libsqfs_image_options_set_compressor(libsqfs_image_options_t options, const struct _libsqfs_compressor * compressor)
+{
+	options->compressor = compressor;
+}
+
 
 libsqfs_image_t
 libsqfs_image_create(libsqfs_destination_t destination, libsqfs_image_options_t options)

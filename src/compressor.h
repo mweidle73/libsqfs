@@ -21,13 +21,9 @@
 #define LIBSQFS_COMPRESSOR_H
 
 #include <stdlib.h>
+#include <libsqfs.h>
 
 /* compressor */
-
-typedef struct _libsqfs_compressor libsqfs_compressor;
-
-extern const libsqfs_compressor libsqfs_compressor_zlib;
-extern const libsqfs_compressor libsqfs_compressor_null;
 
 typedef struct _libsqfs_compressor_instance libsqfs_compressor_instance;
 
