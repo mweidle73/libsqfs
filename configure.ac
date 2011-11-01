@@ -21,6 +21,9 @@ AM_CONDITIONAL([BUILD_EXAMPLES], [test "x$ENABLE_EXAMPLES" = "xyes"])
 PKG_CHECK_MODULES([ZLIB], [zlib], [HAVE_ZLIB=yes], [HAVE_ZLIB=no])
 AM_CONDITIONAL([BUILD_ZLIB_COMPRESSOR], [test "x$HAVE_ZLIB" = "xyes"])
 
+PKG_CHECK_MODULES([LIBLZMA], [liblzma], [HAVE_LIBLZMA=yes], [HAVE_LIBLZMA=no])
+AM_CONDITIONAL([BUILD_LIBLZMA_COMPRESSOR], [test "x$HAVE_LIBLZMA" = "xyes"])
+
 AC_CONFIG_FILES([Makefile
                  src/Makefile
                  examples/Makefile

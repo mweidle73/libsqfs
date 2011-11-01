@@ -110,6 +110,7 @@ typedef enum {
 typedef struct _libsqfs_compressor libsqfs_compressor;
 extern const libsqfs_compressor libsqfs_compressor_null;
 extern const libsqfs_compressor libsqfs_compressor_zlib;
+extern const libsqfs_compressor libsqfs_compressor_lzma;
 
 /** \brief Options influencing on-disk layout of image */
 typedef struct _libsqfs_image_options * libsqfs_image_options_t;
