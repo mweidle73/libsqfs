@@ -22,6 +22,7 @@
 
 #include <stdbool.h>
 #include <sys/types.h>
+#include <libsqfs/site-config.h>
 
 #ifdef __cpluscplus
 extern "C"
@@ -30,6 +31,22 @@ extern "C"
 
 /** \brief Type for representing file offsets */
 typedef long long libsqfs_off_t;
+
+/** \brief Compressor for squashfs data and metadata blocks */
+typedef struct _libsqfs_compressor libsqfs_compressor;
+
+#define LIBSQFS_HAVE_COMPRESSOR_NULL 1
+
+#ifdef LIBSQFS_HAVE_COMPRESSOR_NULL
+extern const libsqfs_compressor libsqfs_compressor_null;
+#endif
+#ifdef LIBSQFS_HAVE_COMPRESSOR_ZLIB
+extern const libsqfs_compressor libsqfs_compressor_zlib;
+#endif
+#ifdef LIBSQFS_HAVE_COMPRESSOR_LZMA
+extern const libsqfs_compressor libsqfs_compressor_lzma;
+#endif
+
 
 /**
 	\defgroup output_handler Output handler
@@ -106,11 +123,6 @@ typedef enum {
 	/** \brief Create fragments for all files, packing tails of small and large files together */
 	libsqfs_fragments_always = 2
 } libsqfs_fragments_option;
-
-typedef struct _libsqfs_compressor libsqfs_compressor;
-extern const libsqfs_compressor libsqfs_compressor_null;
-extern const libsqfs_compressor libsqfs_compressor_zlib;
-extern const libsqfs_compressor libsqfs_compressor_lzma;
 
 /** \brief Options influencing on-disk layout of image */
 typedef struct _libsqfs_image_options * libsqfs_image_options_t;

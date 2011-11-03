@@ -27,7 +27,11 @@ libsqfs_image_options_defaults(libsqfs_image_options_t options)
 	options->fragment_compression = true;
 	options->fragments = libsqfs_fragments_small;
 	options->exportable = false;
+#ifdef LIBSQFS_HAVE_COMPRESSOR_ZLIB
 	options->compressor = &libsqfs_compressor_zlib;
+#else
+	options->compressor = &libsqfs_compressor_null;
+#endif
 	options->padding = true;
 	options->block_size_log = 17 /* SQUASHFS_FILE_LOG */;
 	options->block_size = 1 << options->block_size_log;

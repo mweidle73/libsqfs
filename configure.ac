@@ -1,6 +1,6 @@
 AC_INIT([libsqfs], [0.1], [helge.bahmann@secunet.com])
 AM_INIT_AUTOMAKE([foreign])
-AM_CONFIG_HEADER(src/config.h)
+AC_CONFIG_HEADERS([src/config.h include/libsqfs/compressors.h])
 AM_MAINTAINER_MODE
 AC_SYS_LARGEFILE
 AC_PROG_CC
@@ -28,4 +28,29 @@ AC_CONFIG_FILES([Makefile
                  src/Makefile
                  examples/Makefile
                  libsqfs.pc])
+
+AC_CONFIG_COMMANDS([include/libsqfs/site-config.h],[
+  outfile=include/libsqfs/site-config.h
+  tmpfile=${outfile}T
+  echo creating $outfile
+  cat > $tmpfile << _EOF_
+#ifndef LIBSQFS_SITE_CONFIG_H
+#define LIBSQFS_SITE_CONFIG_H
+
+_EOF_
+  if test x$HAVE_ZLIB = xyes ; then
+    echo '#define LIBSQFS_HAVE_COMPRESSOR_ZLIB 1' >> $tmpfile
+  fi
+  if test x$HAVE_LIBLZMA = xyes ; then
+    echo '#define LIBSQFS_HAVE_COMPRESSOR_LZMA 1' >> $tmpfile
+  fi
+cat >> $tmpfile << _EOF_
+
+#endif
+_EOF_
+  mv $tmpfile $outfile
+],[
+  HAVE_ZLIB=$HAVE_ZLIB
+  HAVE_LIBLZMA=$HAVE_LIBLZMA
+])
 AC_OUTPUT

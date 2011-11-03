@@ -33,4 +33,4 @@ libsqfs_la_CFLAGS = $(ZLIB_CFLAGS) $(LIBLZMA_CFLAGS) $(AM_CFLAGS)
 libsqfs_la_LDFLAGS = -version-number 0:1:0 -no-undefined
 libsqfs_la_LIBADD = -lpthread $(ZLIB_LIBS) $(LIBLZMA_LIBS)
 libsqfsincludedir = $(includedir)
-libsqfsinclude_HEADERS = $(top_srcdir)/include/libsqfs.h
+libsqfsinclude_HEADERS = $(top_srcdir)/include/libsqfs.h $(top_srcdir)/include/libsqfs/site-config.h
