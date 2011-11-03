@@ -2,7 +2,3 @@
 
 %:
 	dh $@
-
-export DH_OPTIONS
-
-binary: DH_OPTIONS=--sourcedir=debian/tmp

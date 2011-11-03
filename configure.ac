@@ -1,6 +1,6 @@
 AC_INIT([libsqfs], [0.1], [helge.bahmann@secunet.com])
 AM_INIT_AUTOMAKE([foreign])
-AC_CONFIG_HEADERS([src/config.h include/libsqfs/compressors.h])
+AC_CONFIG_HEADERS([src/config.h])
 AM_MAINTAINER_MODE
 AC_SYS_LARGEFILE
 AC_PROG_CC
