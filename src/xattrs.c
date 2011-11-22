@@ -208,49 +208,48 @@ libsqfs_xattr_table_write(libsqfs_xattr_table * tab, libsqfs_image_t image)
 		return true;
 	}
 	/* layout of the xattr area is as follows:
-	
-	+-------------------+
-	| header            |
-	+-------------------+
-	| index             |
+
 	+-------------------+
 	| xattr data        |
 	+-------------------+
 	| xattr descriptors |
 	+-------------------+
-	
+	| header            |
+	+-------------------+
+	| index table       |
+	+-------------------+
+
 	The header provides the number of xattr descriptors as well as the start
 	position of the xattr data table. The following index table contains the
 	locations of the compressed blocks building the xattr descriptor table
 	(size of the index is implicitly determined through the number of descriptors).
 	The descriptors themselves reference the xattr data blocks.
 	*/
+	ssize_t written;
 	size_t descriptor_table_size = tab->nids * sizeof(struct squashfs_xattr_id);
 	size_t index_entries = (descriptor_table_size + SQUASHFS_METADATA_SIZE - 1) / SQUASHFS_METADATA_SIZE;
-	size_t index_table_size = index_entries * sizeof(uint64_t);
-	
-	/* header */
-	
-	struct squashfs_xattr_table header;
-	libsqfs_off_t xattr_header_pos = libsqfs_image_reserve(image, sizeof(header));
-	
-	header.xattr_table_start = cpu_to_le64(xattr_header_pos + sizeof(header) + index_table_size);
-	header.xattr_ids = cpu_to_le32(tab->nids);
-	header.unused = 0;
-	
-	ssize_t written = libsqfs_pwrite(image->dst, &header, sizeof(header), xattr_header_pos);
-	if (written != sizeof(header)) return false;
-	
-	/* reserve space for index table, will revisit later */
-	libsqfs_off_t index_pos = libsqfs_image_reserve(image, index_entries * sizeof(uint64_t));
-	
+
 	/* xattr data */
 	if (!libsqfs_metatable_write(&tab->xattr_data, image)) return false;
-	
+
 	/* xattr descriptors */
 	if (!libsqfs_metatable_write(&tab->xattr_descriptors, image)) return false;
-	
+
+	/* header */
+	struct squashfs_xattr_table header;
+	libsqfs_off_t xattr_header_pos = libsqfs_image_reserve(image, sizeof(header));
+
+	header.xattr_table_start = cpu_to_le64(tab->xattr_data.offset);
+	header.xattr_ids = cpu_to_le32(tab->nids);
+	header.unused = 0;
+
+	written = libsqfs_pwrite(image->dst, &header, sizeof(header), xattr_header_pos);
+	if (written != sizeof(header)) return false;
+
 	/* index table */ 
+	/* reserve space for index table, will revisit later */
+	libsqfs_off_t index_pos = libsqfs_image_reserve(image, index_entries * sizeof(uint64_t));
+
 	uint64_t index_table[index_entries];
 	size_t n;
 	libsqfs_metablock * block = tab->xattr_descriptors.first;
@@ -258,11 +257,11 @@ libsqfs_xattr_table_write(libsqfs_xattr_table * tab, libsqfs_image_t image)
 		index_table[n] = cpu_to_le64(tab->xattr_descriptors.offset + block->offset);
 		block = block->next;
 	}
-	
+
 	written = libsqfs_pwrite(image->dst, index_table, sizeof(index_table), index_pos);
 	if (written != sizeof(index_table)) return false;
-	
+
 	tab->offset = xattr_header_pos;
-	
+
 	return true;
 }

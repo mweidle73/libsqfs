@@ -214,8 +214,8 @@ libsqfs_image_finalize(libsqfs_image_t image)
 	success = success && libsqfs_bulkdata_write_fragment_table(&image->bulkdata, image);
 	if (image->options.exportable)
 		success = success && libsqfs_export_table_write(image, &image->export_table);
-	success = success && libsqfs_xattr_table_write(&image->xattr_table, image);
 	success = success && libsqfs_idtable_write(image, &image->idtable);
+	success = success && libsqfs_xattr_table_write(&image->xattr_table, image);
 	success = success && libsqfs_write_superblock(image);
 	
 	if (success && image->options.padding) {
