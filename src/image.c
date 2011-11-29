@@ -205,6 +205,7 @@ libsqfs_image_close(libsqfs_image_t image)
 	libsqfs_metatable_fini(&image->inode_table);
 	libsqfs_idtable_destroy(&image->idtable);
 	libsqfs_compressor_instance_destroy(image->compressor);
+	libsqfs_image_options_destroy(image->options);
 	
 	free(image);
 	

@@ -19,9 +19,13 @@
 
 #include <libsqfs.h>
 
+#include "malloc-verify.h"
+
 int main(void)
 {
-	libsqfs_destination_t dest = libsqfs_destination_create_for_file("/tmp/test.img", 0644);
+	malloc_verify_start();
+	
+	libsqfs_destination_t dest = libsqfs_destination_create_null();
 	libsqfs_image_t image = libsqfs_image_create(dest, 0);
 	
 	libsqfs_inodeattr_t iattr = libsqfs_inodeattr_create_simple(image, /* uid */ 1000, /* gid */ 1000, 0755, 0);
@@ -30,6 +34,8 @@ int main(void)
 	
 	libsqfs_image_close(image);
 	libsqfs_destination_release(dest);
+	
+	malloc_verify_end();
 	
 	return 0;
 }

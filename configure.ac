@@ -27,6 +27,7 @@ AM_CONDITIONAL([BUILD_LIBLZMA_COMPRESSOR], [test "x$HAVE_LIBLZMA" = "xyes"])
 
 AC_CONFIG_FILES([Makefile
                  src/Makefile
+                 tests/Makefile
                  examples/Makefile
                  libsqfs.pc])
 

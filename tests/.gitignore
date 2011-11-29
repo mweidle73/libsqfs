@@ -1,1 +1,6 @@
-compounddata
+test-dir-layout
+test-empty-image
+test-file-xattrs
+test-options
+test-simple-file
+test-special-files

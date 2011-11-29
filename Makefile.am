@@ -6,7 +6,7 @@ LIBLZMA_CFLAGS = @LIBLZMA_CFLAGS@
 if BUILD_EXAMPLES
 MAYBE_EXAMPLES = examples
 endif
-SUBDIRS = src $(MAYBE_EXAMPLES)
+SUBDIRS = src tests $(MAYBE_EXAMPLES)
 
 lib_LTdir = $(libdir)
 

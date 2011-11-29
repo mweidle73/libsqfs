@@ -19,12 +19,16 @@
 
 #include <libsqfs.h>
 
-const char sentence[] = "The quick brown fox jumps over the lazy dog.\n";
-const char another[] = "the quick brown fox jumps over the lazy dog.\n";
+#include "malloc-verify.h"
+
+static const char sentence[] = "The quick brown fox jumps over the lazy dog.\n";
+static const char another[] = "the quick brown fox jumps over the lazy dog.\n";
 
 int main(void)
 {
-	libsqfs_destination_t dest = libsqfs_destination_create_for_file("/tmp/test.img", 0644);
+	malloc_verify_start();
+	
+	libsqfs_destination_t dest = libsqfs_destination_create_null();
 	libsqfs_image_t image = libsqfs_image_create(dest, 0);
 	
 	libsqfs_inodeattr_t fileattr = libsqfs_inodeattr_create_simple(image, 1000, 1000, 0644, 0);
@@ -42,6 +46,8 @@ int main(void)
 	
 	libsqfs_image_close(image);
 	libsqfs_destination_release(dest);
+	
+	malloc_verify_end();
 	
 	return 0;
 }
