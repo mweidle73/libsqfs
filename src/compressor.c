@@ -20,9 +20,21 @@
 #include "compressor.h"
 
 libsqfs_compressor_instance *
-libsqfs_compressor_open(const libsqfs_compressor * compr)
+libsqfs_compressor_open(const libsqfs_compressor * self)
 {
-	return compr->open(compr);
+	return self->open(self);
+}
+
+void
+libsqfs_compressor_destroy(libsqfs_compressor * self)
+{
+	self->destroy(self);
+}
+
+libsqfs_compressor *
+libsqfs_compressor_copy(const libsqfs_compressor * self)
+{
+	return self->copy(self);
 }
 
 ssize_t
@@ -69,7 +81,26 @@ null_compressor_open(const libsqfs_compressor * self)
 	return i;
 }
 
+static void
+null_compressor_destroy(libsqfs_compressor * self)
+{
+	free(self);
+}
+
+static libsqfs_compressor *
+null_compressor_copy(const libsqfs_compressor * self)
+{
+	libsqfs_compressor * copy = malloc(sizeof(*copy));
+	if (!copy) return 0;
+	*copy = *self;
+	
+	return copy;
+}
+
+
 const libsqfs_compressor libsqfs_compressor_null = {
+	.destroy = &null_compressor_destroy,
+	.copy = &null_compressor_copy,
 	.open = &null_compressor_open,
 	.id = 0
 };

@@ -337,7 +337,7 @@ libsqfs_fragment_piece_assign(libsqfs_chunk * chunk, libsqfs_image_t image)
 	
 	if (piece->prev_piece) {
 		frag_block = piece->prev_piece->fragment_block;
-		if (frag_block->size + piece->data.size > image->options.block_size) {
+		if (frag_block->size + piece->data.size > image->options->block_size) {
 			/* adding this piece would overflow the previous fragment block;
 			schedule compression and write-out for the previous block, and
 			create a new block starting with this element */

@@ -27,11 +27,13 @@ libsqfs_image_options_defaults(libsqfs_image_options_t options)
 	options->fragment_compression = true;
 	options->fragments = libsqfs_fragments_small;
 	options->exportable = false;
+	const libsqfs_compressor * default_compressor =
 #ifdef LIBSQFS_HAVE_COMPRESSOR_ZLIB
-	options->compressor = &libsqfs_compressor_zlib;
+		&libsqfs_compressor_zlib;
 #else
-	options->compressor = &libsqfs_compressor_null;
+		&libsqfs_compressor_null;
 #endif
+	options->compressor = libsqfs_compressor_copy(default_compressor);
 	options->padding = true;
 	options->block_size_log = 17 /* SQUASHFS_FILE_LOG */;
 	options->block_size = 1 << options->block_size_log;
@@ -43,6 +45,10 @@ libsqfs_image_options_create(void)
 	libsqfs_image_options_t options = malloc(sizeof(*options));
 	if (!options) return 0;
 	libsqfs_image_options_defaults(options);
+	if (!options->compressor) {
+		free(options);
+		return 0;
+	}
 	return options;
 }
 
@@ -53,12 +59,18 @@ libsqfs_image_options_copy(libsqfs_image_options_t options)
 	copy = malloc(sizeof(*copy));
 	if (!copy) return 0;
 	*copy = *options;
+	copy->compressor = libsqfs_compressor_copy(options->compressor);
+	if (!copy->compressor) {
+		free(copy);
+		return 0;
+	}
 	return copy;
 }
 
 void
 libsqfs_image_options_destroy(libsqfs_image_options_t options)
 {
+	libsqfs_compressor_destroy(options->compressor);
 	free(options);
 }
 
@@ -113,7 +125,7 @@ libsqfs_image_options_set_block_size(libsqfs_image_options_t options, size_t blo
 void
 libsqfs_image_options_set_compressor(libsqfs_image_options_t options, const struct _libsqfs_compressor * compressor)
 {
-	options->compressor = compressor;
+	options->compressor = libsqfs_compressor_copy(compressor);
 }
 
 
@@ -126,11 +138,20 @@ libsqfs_image_create(libsqfs_destination_t destination, libsqfs_image_options_t 
 		return 0;
 	}
 	
-	if (options) image->options = *options;
-	else libsqfs_image_options_defaults(&image->options);
+	if (options)
+		image->options = libsqfs_image_options_copy(options);
+	else
+		image->options = libsqfs_image_options_create();
 	
-	image->compressor = libsqfs_compressor_open(image->options.compressor);
+	if (!image->options) {
+		free(image);
+		errno = ENOMEM;
+		return 0;
+	}
+	
+	image->compressor = libsqfs_compressor_open(image->options->compressor);
 	if (!image->compressor) {
+		libsqfs_image_options_destroy(image->options);
 		free(image);
 		errno = ENOMEM;
 		return 0;
@@ -149,12 +170,12 @@ libsqfs_image_create(libsqfs_destination_t destination, libsqfs_image_options_t 
 	
 	image->root = 0;
 	
-	libsqfs_bulkdata_init(&image->bulkdata, image->options.data_compression, image->options.fragment_compression);
+	libsqfs_bulkdata_init(&image->bulkdata, image->options->data_compression, image->options->fragment_compression);
 	libsqfs_idtable_init(&image->idtable);
-	libsqfs_metatable_init(&image->dir_table, image->options.inode_compression ? image->compressor : 0);
-	libsqfs_metatable_init(&image->inode_table, image->options.inode_compression ? image->compressor : 0);
+	libsqfs_metatable_init(&image->dir_table, image->options->inode_compression ? image->compressor : 0);
+	libsqfs_metatable_init(&image->inode_table, image->options->inode_compression ? image->compressor : 0);
 	libsqfs_export_table_init(&image->export_table);
-	libsqfs_xattr_table_init(&image->xattr_table, image->options.data_compression ? image->compressor : 0);
+	libsqfs_xattr_table_init(&image->xattr_table, image->options->data_compression ? image->compressor : 0);
 	
 	libsqfs_threadpool_init(&image->threadpool);
 	
@@ -233,13 +254,13 @@ libsqfs_image_finalize(libsqfs_image_t image)
 	success = success && libsqfs_metatable_write(&image->dir_table, image);
 	
 	success = success && libsqfs_bulkdata_write_fragment_table(&image->bulkdata, image);
-	if (image->options.exportable)
+	if (image->options->exportable)
 		success = success && libsqfs_export_table_write(image, &image->export_table);
 	success = success && libsqfs_idtable_write(image, &image->idtable);
 	success = success && libsqfs_xattr_table_write(&image->xattr_table, image);
 	success = success && libsqfs_write_superblock(image);
 	
-	if (success && image->options.padding) {
+	if (success && image->options->padding) {
 		libsqfs_off_t padded_size = (image->size + 4095) & ~4095;
 		if (padded_size != image->size)
 			if (libsqfs_truncate(image->dst, padded_size))
@@ -288,7 +309,7 @@ static void *
 libsqfs_image_thread_function(void * arg)
 {
 	libsqfs_image_t image = arg;
-	libsqfs_compressor_instance * ci  = libsqfs_compressor_open(image->options.compressor);
+	libsqfs_compressor_instance * ci  = libsqfs_compressor_open(image->options->compressor);
 	if (!ci) {
 		libsqfs_image_out_of_memory(image, true);
 		return 0;

@@ -28,6 +28,8 @@
 typedef struct _libsqfs_compressor_instance libsqfs_compressor_instance;
 
 struct _libsqfs_compressor {
+	void (*destroy)(libsqfs_compressor * self);
+	libsqfs_compressor * (*copy)(const libsqfs_compressor * self);
 	libsqfs_compressor_instance * (*open)(const libsqfs_compressor * self);
 	int id;
 };
@@ -44,6 +46,12 @@ struct _libsqfs_compressor_instance {
 
 libsqfs_compressor_instance *
 libsqfs_compressor_open(const libsqfs_compressor * compr);
+
+void
+libsqfs_compressor_destroy(libsqfs_compressor * self);
+
+libsqfs_compressor *
+libsqfs_compressor_copy(const libsqfs_compressor * self);
 
 /* transforms the given input data and returns the number of bytes of
 the output area used; if the block could not be compressed (e.g. because

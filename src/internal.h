@@ -94,13 +94,13 @@ struct _libsqfs_image_options {
 	bool fragment_compression;
 	libsqfs_fragments_option fragments;
 	bool exportable;
-	const libsqfs_compressor * compressor;
+	libsqfs_compressor * compressor;
 	bool padding;
 	size_t block_size, block_size_log;
 };
 
 struct _libsqfs_image {
-	libsqfs_image_options options;
+	libsqfs_image_options * options;
 	libsqfs_destination_t dst;
 	libsqfs_off_t size;
 	

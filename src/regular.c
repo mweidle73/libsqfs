@@ -135,24 +135,24 @@ libsqfs_regular_inode_create(libsqfs_image_t image, libsqfs_inodeattr_t attr, li
 	
 	size_t nblocks, tail_size;
 	
-	switch(image->options.fragments) {
+	switch(image->options->fragments) {
 		case libsqfs_fragments_never:
-			nblocks = (file_size + image->options.block_size-1) / image->options.block_size;
+			nblocks = (file_size + image->options->block_size-1) / image->options->block_size;
 			tail_size = 0;
 			break;
 		default:
 		case libsqfs_fragments_small:
-			if (file_size < image->options.block_size) {
+			if (file_size < image->options->block_size) {
 				nblocks = 0;
 				tail_size = file_size;
 			} else {
-				nblocks = (file_size + image->options.block_size-1) / image->options.block_size;
+				nblocks = (file_size + image->options->block_size-1) / image->options->block_size;
 				tail_size = 0;
 			}
 			break;
 		case libsqfs_fragments_always:
-			nblocks = file_size / image->options.block_size;
-			tail_size = file_size % image->options.block_size;
+			nblocks = file_size / image->options->block_size;
+			tail_size = file_size % image->options->block_size;
 			break;
 	}
 	
@@ -176,9 +176,9 @@ libsqfs_regular_inode_create(libsqfs_image_t image, libsqfs_inodeattr_t attr, li
 	
 	size_t n;
 	for(n=0; n<nblocks; n++) {
-		libsqfs_off_t offset = n * (libsqfs_off_t)image->options.block_size;
-		size_t size = image->options.block_size;
-		if (file_size-offset < image->options.block_size) size = file_size - offset;
+		libsqfs_off_t offset = n * (libsqfs_off_t)image->options->block_size;
+		size_t size = image->options->block_size;
+		if (file_size-offset < image->options->block_size) size = file_size - offset;
 		libsqfs_data_piece p;
 		p.data = data;
 		p.size = size;

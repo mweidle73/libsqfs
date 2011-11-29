@@ -37,11 +37,11 @@ libsqfs_write_superblock(libsqfs_image_t image)
 	struct squashfs_super_block sb;
 	
 	uint16_t flags = 0
-		| (image->options.inode_compression ? 0 : 1<<SQUASHFS_NOI)
-		| (image->options.data_compression ? 0 : 1<<SQUASHFS_NOD)
-		| (image->options.fragment_compression ? 0 : 1<<SQUASHFS_NOF)
-		| fragments_option_to_flag(image->options.fragments)
-		| (image->options.exportable ? 1<<SQUASHFS_EXPORT : 0)
+		| (image->options->inode_compression ? 0 : 1<<SQUASHFS_NOI)
+		| (image->options->data_compression ? 0 : 1<<SQUASHFS_NOD)
+		| (image->options->fragment_compression ? 0 : 1<<SQUASHFS_NOF)
+		| fragments_option_to_flag(image->options->fragments)
+		| (image->options->exportable ? 1<<SQUASHFS_EXPORT : 0)
 		| (1<<SQUASHFS_DUPLICATE)
 		;
 	
@@ -49,10 +49,10 @@ libsqfs_write_superblock(libsqfs_image_t image)
 	sb.s_magic = cpu_to_le32(SQUASHFS_MAGIC);
 	sb.inodes = cpu_to_le32(image->inodes.count);
 	sb.mkfs_time = cpu_to_le32(image->creation_time);
-	sb.block_size = cpu_to_le32(image->options.block_size);
+	sb.block_size = cpu_to_le32(image->options->block_size);
 	sb.fragments = cpu_to_le32(image->bulkdata.fragment_blocks.count);
-	sb.compression = cpu_to_le16(image->options.compressor->id);
-	sb.block_log = cpu_to_le16(image->options.block_size_log);
+	sb.compression = cpu_to_le16(image->options->compressor->id);
+	sb.block_log = cpu_to_le16(image->options->block_size_log);
 	sb.flags = cpu_to_le16(flags);
 	sb.no_ids = cpu_to_le16(image->idtable.nids);
 	sb.s_major = cpu_to_le16(4);

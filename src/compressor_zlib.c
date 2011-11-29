@@ -79,7 +79,25 @@ libsqfs_compressor_zlib_open(const libsqfs_compressor * self)
 	return &instance->base;
 }
 
+static void
+libsqfs_compressor_zlib_destroy(libsqfs_compressor * self)
+{
+	free(self);
+}
+
+static libsqfs_compressor *
+libsqfs_compressor_zlib_copy(const libsqfs_compressor * self)
+{
+	libsqfs_compressor * copy = malloc(sizeof(*copy));
+	if (!copy) return 0;
+	*copy = *self;
+	
+	return copy;
+}
+
 const libsqfs_compressor libsqfs_compressor_zlib = {
+	.destroy = &libsqfs_compressor_zlib_destroy,
+	.copy = &libsqfs_compressor_zlib_copy,
 	.open = &libsqfs_compressor_zlib_open,
 	.id = ZLIB_COMPRESSION
 };
