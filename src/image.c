@@ -46,6 +46,16 @@ libsqfs_image_options_create(void)
 	return options;
 }
 
+libsqfs_image_options_t
+libsqfs_image_options_copy(libsqfs_image_options_t options)
+{
+	libsqfs_image_options_t copy;
+	copy = malloc(sizeof(*copy));
+	if (!copy) return 0;
+	*copy = *options;
+	return copy;
+}
+
 void
 libsqfs_image_options_destroy(libsqfs_image_options_t options)
 {

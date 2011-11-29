@@ -146,6 +146,18 @@ void
 libsqfs_image_options_destroy(libsqfs_image_options_t options);
 
 /**
+	\brief Copy image options
+	\param options Handle for options to be copied
+	\returns Handle for new image options
+	
+	Creates an image options set that is an exact copy of the input
+	set. This is a "deep copy", i.e. modifications to the
+	original options do not affect the newly created copy.
+*/
+libsqfs_image_options_t
+libsqfs_image_options_copy(libsqfs_image_options_t options);
+
+/**
 	\brief Control compression of inode tables
 	\param options Handle for options
 	\param compress Turn compression on/off
