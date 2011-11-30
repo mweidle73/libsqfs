@@ -181,6 +181,18 @@ libsqfs_image_create(libsqfs_destination_t destination, libsqfs_image_options_t 
 	
 	libsqfs_reserve_superblock(image);
 	
+	image->compressor_option_data = libsqfs_compressor_get_option_data(image->options->compressor);
+	if (image->compressor_option_data) {
+		if (!image->compressor_option_data->data) {
+			libsqfs_compressor_instance_destroy(image->compressor);
+			libsqfs_image_options_destroy(image->options);
+			free(image);
+			errno = ENOMEM;
+			return 0;
+		}
+		image->compressor_option_data_loc = libsqfs_image_reserve(image, image->compressor_option_data->size + 2);
+	}
+	
 	return image;
 }
 
@@ -227,10 +239,29 @@ libsqfs_image_close(libsqfs_image_t image)
 	libsqfs_idtable_destroy(&image->idtable);
 	libsqfs_compressor_instance_destroy(image->compressor);
 	libsqfs_image_options_destroy(image->options);
+	if (image->compressor_option_data)
+		libsqfs_compressor_option_data_destroy(image->compressor_option_data);
 	
 	free(image);
 	
 	return state;
+}
+
+static bool
+libsqfs_image_write_compressor_options(libsqfs_image_t image)
+{
+	if (!image->compressor_option_data)
+		return true;
+	
+	const void * data = image->compressor_option_data->data;
+	size_t size = image->compressor_option_data->size;
+	uint16_t stored_size = cpu_to_le16(size | SQUASHFS_COMPRESSED_BIT);
+	
+	ssize_t count = libsqfs_pwrite(image->dst, &stored_size, 2, image->compressor_option_data_loc);
+	if (count != 2) return false;
+	
+	count = libsqfs_pwrite(image->dst, data, size, image->compressor_option_data_loc + 2);
+	return count == sizeof(size);
 }
 
 libsqfs_image_state_t
@@ -258,6 +289,7 @@ libsqfs_image_finalize(libsqfs_image_t image)
 		success = success && libsqfs_export_table_write(image, &image->export_table);
 	success = success && libsqfs_idtable_write(image, &image->idtable);
 	success = success && libsqfs_xattr_table_write(&image->xattr_table, image);
+	success = success && libsqfs_image_write_compressor_options(image);
 	success = success && libsqfs_write_superblock(image);
 	
 	if (success && image->options->padding) {

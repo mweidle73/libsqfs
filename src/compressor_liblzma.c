@@ -105,9 +105,16 @@ libsqfs_compressor_lzma_copy(const libsqfs_compressor * self)
 	return copy;
 }
 
+static libsqfs_compressor_option_data *
+libsqfs_compressor_lzma_get_option_data(const libsqfs_compressor * self)
+{
+	return 0;
+}
+
 const libsqfs_compressor libsqfs_compressor_lzma = {
 	.destroy = &libsqfs_compressor_lzma_destroy,
 	.copy = &libsqfs_compressor_lzma_copy,
 	.open = &libsqfs_compressor_lzma_open,
+	.get_option_data = &libsqfs_compressor_lzma_get_option_data,
 	.id = LZMA_COMPRESSION
 };

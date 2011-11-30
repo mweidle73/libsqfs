@@ -25,12 +25,22 @@
 
 /* compressor */
 
+typedef struct libsqfs_compressor_option_data libsqfs_compressor_option_data;
 typedef struct libsqfs_compressor_instance libsqfs_compressor_instance;
+
+struct libsqfs_compressor_option_data {
+	size_t size;
+	void * data;
+};
+
+void
+libsqfs_compressor_option_data_destroy(libsqfs_compressor_option_data * self);
 
 struct libsqfs_compressor {
 	void (*destroy)(libsqfs_compressor * self);
 	libsqfs_compressor * (*copy)(const libsqfs_compressor * self);
 	libsqfs_compressor_instance * (*open)(const libsqfs_compressor * self);
+	libsqfs_compressor_option_data * (*get_option_data)(const libsqfs_compressor * self);
 	int id;
 };
 
@@ -52,6 +62,9 @@ libsqfs_compressor_destroy(libsqfs_compressor * self);
 
 libsqfs_compressor *
 libsqfs_compressor_copy(const libsqfs_compressor * self);
+
+libsqfs_compressor_option_data *
+libsqfs_compressor_get_option_data(const libsqfs_compressor * self);
 
 /* transforms the given input data and returns the number of bytes of
 the output area used; if the block could not be compressed (e.g. because

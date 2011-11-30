@@ -95,9 +95,16 @@ libsqfs_compressor_zlib_copy(const libsqfs_compressor * self)
 	return copy;
 }
 
+static libsqfs_compressor_option_data *
+libsqfs_compressor_zlib_get_option_data(const libsqfs_compressor * self)
+{
+	return 0;
+}
+
 const libsqfs_compressor libsqfs_compressor_zlib = {
 	.destroy = &libsqfs_compressor_zlib_destroy,
 	.copy = &libsqfs_compressor_zlib_copy,
 	.open = &libsqfs_compressor_zlib_open,
+	.get_option_data = &libsqfs_compressor_zlib_get_option_data,
 	.id = ZLIB_COMPRESSION
 };

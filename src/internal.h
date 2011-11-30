@@ -129,6 +129,8 @@ struct libsqfs_image {
 	libsqfs_xattr_table xattr_table;
 	
 	libsqfs_compressor_instance * compressor;
+	libsqfs_compressor_option_data * compressor_option_data;
+	libsqfs_off_t compressor_option_data_loc;
 	
 	libsqfs_directory_inode_t root;
 	libsqfs_threadpool threadpool;

@@ -43,6 +43,7 @@ libsqfs_write_superblock(libsqfs_image_t image)
 		| fragments_option_to_flag(image->options->fragments)
 		| (image->options->exportable ? 1<<SQUASHFS_EXPORT : 0)
 		| (1<<SQUASHFS_DUPLICATE)
+		| (image->compressor_option_data ? 1<<SQUASHFS_COMP_OPT : 0)
 		;
 	
 	
