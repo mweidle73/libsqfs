@@ -24,11 +24,11 @@
 
 /* worker thread pool */
 
-typedef struct _libsqfs_worker_thread libsqfs_worker_thread;
-typedef struct _libsqfs_threadpool libsqfs_threadpool;
-typedef struct _libsqfs_workitem libsqfs_workitem;
+typedef struct libsqfs_worker_thread libsqfs_worker_thread;
+typedef struct libsqfs_threadpool libsqfs_threadpool;
+typedef struct libsqfs_workitem libsqfs_workitem;
 
-struct _libsqfs_threadpool {
+struct libsqfs_threadpool {
 	struct { libsqfs_worker_thread * first, * last; } threads;
 };
 

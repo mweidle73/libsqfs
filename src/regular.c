@@ -24,8 +24,8 @@
 
 #include "squashfs_fs.h"
 
-struct _libsqfs_regular_inode {
-	struct _libsqfs_inode base;
+struct libsqfs_regular_inode {
+	struct libsqfs_inode base;
 	
 	libsqfs_off_t file_size, sparse_size;
 	size_t nblocks;

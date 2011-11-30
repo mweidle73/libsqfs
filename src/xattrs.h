@@ -25,10 +25,10 @@
 #include "metatable.h"
 #include "compressor.h"
 
-typedef struct _libsqfs_xattr libsqfs_xattr;
-typedef struct _libsqfs_xattrset libsqfs_xattrset;
+typedef struct libsqfs_xattr libsqfs_xattr;
+typedef struct libsqfs_xattrset libsqfs_xattrset;
 
-struct _libsqfs_xattr {
+struct libsqfs_xattr {
 	/* all allocated xattrsets for an image chained together */
 	libsqfs_xattr_t prev, next;
 	
@@ -47,7 +47,7 @@ struct _libsqfs_xattr {
 	size_t value_length;
 };
 
-struct _libsqfs_xattrset {
+struct libsqfs_xattrset {
 	/* all allocated xattrsets for an image chained together */
 	libsqfs_xattrset_t prev, next;
 	
@@ -67,9 +67,9 @@ struct _libsqfs_xattrset {
 	size_t stored_size;
 };
 
-typedef struct _libsqfs_xattr_table libsqfs_xattr_table;
+typedef struct libsqfs_xattr_table libsqfs_xattr_table;
 
-struct _libsqfs_xattr_table {
+struct libsqfs_xattr_table {
 	/* linked list of all xattrs allocated for this image */
 	struct {
 		libsqfs_xattr_t first, last;

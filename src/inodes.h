@@ -27,7 +27,7 @@
 
 /* inodes */
 
-struct _libsqfs_inodeattr {
+struct libsqfs_inodeattr {
 	libsqfs_inodeattr_t prev, next;
 	uid_t uid;
 	gid_t gid;
@@ -42,14 +42,14 @@ struct _libsqfs_inodeattr {
 void
 libsqfs_inodeattr_destroy(libsqfs_inodeattr_t attr);
 
-typedef struct _libsqfs_inode_vmt libsqfs_inode_vmt;
+typedef struct libsqfs_inode_vmt libsqfs_inode_vmt;
 
-struct _libsqfs_inode_vmt {
+struct libsqfs_inode_vmt {
 	void (*destroy)(libsqfs_inode_t inode);
 	bool (*serialize)(libsqfs_inode_t inode);
 };
 
-struct _libsqfs_inode {
+struct libsqfs_inode {
 	const libsqfs_inode_vmt * vmt;
 	libsqfs_inode_t prev, next;
 	libsqfs_image_t image;
@@ -75,10 +75,10 @@ libsqfs_encoded_inode(const libsqfs_inode_t inode)
 	return inode->inode_table_entry.offset | (((long long)inode->inode_table_entry.block) << 16);
 }
 
-typedef struct _libsqfs_directory_entry libsqfs_directory_entry;
+typedef struct libsqfs_directory_entry libsqfs_directory_entry;
 
-struct _libsqfs_directory_inode {
-	struct _libsqfs_inode base;
+struct libsqfs_directory_inode {
+	struct libsqfs_inode base;
 	
 	libsqfs_directory_inode_t parent;
 	struct {

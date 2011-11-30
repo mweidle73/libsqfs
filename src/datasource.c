@@ -24,7 +24,7 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 
-struct _libsqfs_data_vmt {
+struct libsqfs_data_vmt {
 	libsqfs_off_t (*get_size)(libsqfs_data_t data);
 	ssize_t (*pread)(libsqfs_data_t data, void * buffer, size_t size, libsqfs_off_t offset);
 	const char * (*describe)(libsqfs_data_t data);
@@ -66,10 +66,8 @@ libsqfs_data_init(libsqfs_image_t image, libsqfs_data_t data)
 	image->dataitems.last = data;
 }
 
-typedef struct _libsqfs_filedata {
-	const libsqfs_data_vmt * vmt;
-	libsqfs_data_t prev, next;
-	libsqfs_image_t image;
+typedef struct libsqfs_filedata {
+	libsqfs_data base;
 	char * pathname;
 } libsqfs_filedata;
 
@@ -152,15 +150,13 @@ libsqfs_data_create_from_file(libsqfs_image_t image, const char * srcpath)
 	
 	libsqfs_data_init(image, (libsqfs_data_t)data);
 	
-	data->vmt = &libsqfs_filedata_vmt;
+	data->base.vmt = &libsqfs_filedata_vmt;
 	
-	return (libsqfs_data_t)data;
+	return &data->base;
 }
 
-typedef struct _libsqfs_memorydata {
-	const libsqfs_data_vmt * vmt;
-	libsqfs_data_t prev, next;
-	libsqfs_image_t image;
+typedef struct libsqfs_memorydata {
+	libsqfs_data base;
 	const void * buffer;
 	size_t size;
 	
@@ -219,9 +215,9 @@ libsqfs_data_create_for_buffer(libsqfs_image_t image, const void * buffer, size_
 	data->deleter_closure = deleter_closure;
 	
 	libsqfs_data_init(image, (libsqfs_data_t)data);
-	data->vmt = &libsqfs_memorydata_vmt;
+	data->base.vmt = &libsqfs_memorydata_vmt;
 	
-	return (libsqfs_data_t)data;
+	return &data->base;
 }
 
 libsqfs_data_t
@@ -236,9 +232,8 @@ libsqfs_data_create_for_transferred_buffer(libsqfs_image_t image, void * buffer,
 	return libsqfs_data_create_for_buffer(image, buffer, size, free, buffer);
 }
 
-typedef struct _libsqfs_compounddata {
-	const libsqfs_data_vmt * vmt;
-	libsqfs_data_t prev, next;
+typedef struct libsqfs_compounddata {
+	libsqfs_data base;
 	libsqfs_image_t image;
 	
 	libsqfs_data_piece * pieces;
@@ -335,7 +330,7 @@ libsqfs_data_create_compound(libsqfs_image_t image, size_t npieces,
 	
 	libsqfs_data_init(image, (libsqfs_data_t)comp);
 	
-	comp->vmt = &libsqfs_compounddata_vmt;
+	comp->base.vmt = &libsqfs_compounddata_vmt;
 	
-	return (libsqfs_data_t) comp;
+	return &comp->base;
 }

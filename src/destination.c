@@ -24,15 +24,15 @@
 #include <fcntl.h>
 #include <errno.h>
 
-typedef struct _libsqfs_destination_vmt libsqfs_destination_vmt;
+typedef struct libsqfs_destination_vmt libsqfs_destination_vmt;
 
-struct _libsqfs_destination_vmt {
+struct libsqfs_destination_vmt {
 	void (*close)(libsqfs_destination_t destination);
 	ssize_t (*pwrite)(libsqfs_destination_t destination, const void * buffer, size_t size, libsqfs_off_t offset);
 	int (*truncate)(libsqfs_destination_t destination, libsqfs_off_t offset);
 };
 
-struct _libsqfs_destination {
+struct libsqfs_destination {
 	const libsqfs_destination_vmt * vmt;
 };
 
@@ -54,8 +54,8 @@ libsqfs_truncate(libsqfs_destination_t destination, libsqfs_off_t offset)
 	return destination->vmt->truncate(destination, offset);
 }
 
-typedef struct _libsqfs_destination_file libsqfs_destination_file;
-struct _libsqfs_destination_file {
+typedef struct libsqfs_destination_file libsqfs_destination_file;
+struct libsqfs_destination_file {
 	const libsqfs_destination_vmt * vmt;
 	int fd;
 	bool owns_fd;

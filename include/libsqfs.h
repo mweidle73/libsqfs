@@ -33,7 +33,7 @@ extern "C"
 typedef long long libsqfs_off_t;
 
 /** \brief Compressor for squashfs data and metadata blocks */
-typedef struct _libsqfs_compressor libsqfs_compressor;
+typedef struct libsqfs_compressor libsqfs_compressor;
 
 #define LIBSQFS_HAVE_COMPRESSOR_NULL 1
 
@@ -59,7 +59,7 @@ extern const libsqfs_compressor libsqfs_compressor_lzma;
 /**
 	\brief @c squashfs image output target
 */
-typedef struct _libsqfs_destination * libsqfs_destination_t;
+typedef struct libsqfs_destination * libsqfs_destination_t;
 
 /**
 	\brief Release destination handle
@@ -125,7 +125,7 @@ typedef enum {
 } libsqfs_fragments_option;
 
 /** \brief Options influencing on-disk layout of image */
-typedef struct _libsqfs_image_options * libsqfs_image_options_t;
+typedef struct libsqfs_image_options * libsqfs_image_options_t;
 
 /**
 	\brief Create handle for image options
@@ -228,7 +228,7 @@ libsqfs_image_options_set_block_size(libsqfs_image_options_t options, size_t blo
 	Select compressor to be used when compressing data and metadata blocks.
 */
 void
-libsqfs_image_options_set_compressor(libsqfs_image_options_t options, const struct _libsqfs_compressor * compressor);
+libsqfs_image_options_set_compressor(libsqfs_image_options_t options, const struct libsqfs_compressor * compressor);
 
 /*@}*/
 
@@ -237,7 +237,7 @@ libsqfs_image_options_set_compressor(libsqfs_image_options_t options, const stru
 	
 	Represents one @c squashfs image that is currently being processed.
 */
-typedef struct _libsqfs_image * libsqfs_image_t;
+typedef struct libsqfs_image * libsqfs_image_t;
 
 /**
 	\brief State of image
@@ -440,7 +440,7 @@ libsqfs_image_error_clear(libsqfs_image_t image);
 	Describes the attributes of an inode (e.g. owner, group, creation
 	time, named extended attributes).
 */
-typedef struct _libsqfs_inodeattr * libsqfs_inodeattr_t;
+typedef struct libsqfs_inodeattr * libsqfs_inodeattr_t;
 
 /**
 	\brief Create inode attribute set
@@ -457,12 +457,12 @@ libsqfs_inodeattr_create_simple(libsqfs_image_t image, uid_t uid, gid_t gid, mod
 /**
 	\brief Extended attribute set
 */
-typedef struct _libsqfs_xattrset * libsqfs_xattrset_t;
+typedef struct libsqfs_xattrset * libsqfs_xattrset_t;
 
 /**
 	\brief Extended attribute
 */
-typedef struct _libsqfs_xattr * libsqfs_xattr_t;
+typedef struct libsqfs_xattr * libsqfs_xattr_t;
 
 /**
 	\brief Create extended attribute
@@ -509,7 +509,7 @@ libsqfs_inodeattr_create_extended(libsqfs_image_t image, uid_t uid, gid_t gid, m
 /**
 	\brief Base handle type for all filesystem objects
 */
-typedef struct _libsqfs_inode * libsqfs_inode_t;
+typedef struct libsqfs_inode * libsqfs_inode_t;
 
 /**
 	\brief Class descriptor of an inode
@@ -520,7 +520,7 @@ typedef struct _libsqfs_inode * libsqfs_inode_t;
 	\ref libsqfs_symlink_inode_class ,
 	\ref libsqfs_fifo_inode_class .
 */
-typedef const struct _libsqfs_inode_vmt * libsqfs_inode_class_t;
+typedef const struct libsqfs_inode_vmt * libsqfs_inode_class_t;
 
 /**
 	\brief Query inode class
@@ -545,7 +545,7 @@ libsqfs_inode_get_class(libsqfs_inode_t inode);
 /**
 	\brief File data content handle
 */
-typedef struct _libsqfs_data * libsqfs_data_t;
+typedef struct libsqfs_data * libsqfs_data_t;
 
 /**
 	\brief Create file data
@@ -606,7 +606,7 @@ libsqfs_data_create_for_transferred_buffer(libsqfs_image_t image, void * buffer,
 	
 	Represents a "piece" of a larger data element
 */
-typedef struct _libsqfs_data_piece {
+typedef struct libsqfs_data_piece {
 	/** \brief Referenced data piece */
 	libsqfs_data_t data;
 	/** \brief Size of the piece */
@@ -633,12 +633,12 @@ libsqfs_data_create_compound(libsqfs_image_t image, size_t npieces,
 /**
 	\brief Regular ("file") inode handle
 */
-typedef struct _libsqfs_regular_inode * libsqfs_regular_inode_t;
+typedef struct libsqfs_regular_inode * libsqfs_regular_inode_t;
 
 /**
 	\internal \brief Virtual methods table -- don't touch
 */
-extern const struct _libsqfs_inode_vmt libsqfs_regular_inode_vmt;
+extern const struct libsqfs_inode_vmt libsqfs_regular_inode_vmt;
 /**
 	\brief Class handle for regular inodes
 */
@@ -693,12 +693,12 @@ libsqfs_regular_inode_cast(libsqfs_inode_t inode)
 /**
 	\brief Directory inode
 */
-typedef struct _libsqfs_directory_inode * libsqfs_directory_inode_t;
+typedef struct libsqfs_directory_inode * libsqfs_directory_inode_t;
 
 /**
 	\internal \brief Virtual methods table -- don't touch
 */
-extern const struct _libsqfs_inode_vmt libsqfs_directory_inode_vmt;
+extern const struct libsqfs_inode_vmt libsqfs_directory_inode_vmt;
 /**
 	\brief Class handle for directory inodes
 */
@@ -772,12 +772,12 @@ libsqfs_directory_inode_cast(libsqfs_inode_t inode)
 /**
 	\brief Symlink inode
 */
-typedef struct _libsqfs_symlink_inode * libsqfs_symlink_inode_t;
+typedef struct libsqfs_symlink_inode * libsqfs_symlink_inode_t;
 
 /**
 	\internal \brief Virtual methods table -- don't touch
 */
-extern const struct _libsqfs_inode_vmt libsqfs_symlink_inode_vmt;
+extern const struct libsqfs_inode_vmt libsqfs_symlink_inode_vmt;
 /**
 	\brief Class handle for symlink inodes
 */
@@ -828,12 +828,12 @@ libsqfs_symlink_inode_cast(libsqfs_inode_t inode)
 /**
 	\brief Device inode
 */
-typedef struct _libsqfs_device_inode * libsqfs_device_inode_t;
+typedef struct libsqfs_device_inode * libsqfs_device_inode_t;
 
 /**
 	\internal \brief Virtual methods table -- don't touch
 */
-extern const struct _libsqfs_inode_vmt libsqfs_device_inode_vmt;
+extern const struct libsqfs_inode_vmt libsqfs_device_inode_vmt;
 /**
 	\brief Class handle for device inodes
 */
@@ -886,12 +886,12 @@ libsqfs_device_inode_cast(libsqfs_inode_t inode)
 /**
 	\brief FIFO inode
 */
-typedef struct _libsqfs_fifo_inode * libsqfs_fifo_inode_t;
+typedef struct libsqfs_fifo_inode * libsqfs_fifo_inode_t;
 
 /**
 	\internal \brief Virtual methods table -- don't touch
 */
-extern const struct _libsqfs_inode_vmt libsqfs_fifo_inode_vmt;
+extern const struct libsqfs_inode_vmt libsqfs_fifo_inode_vmt;
 /**
 	\brief Class handle for fifo inodes
 */

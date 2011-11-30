@@ -53,8 +53,8 @@ libsqfs_image_process_chunks(libsqfs_image_t image);
 
 /* id table  */
 
-typedef struct _libsqfs_idtable libsqfs_idtable;
-struct _libsqfs_idtable {
+typedef struct libsqfs_idtable libsqfs_idtable;
+struct libsqfs_idtable {
 	uint32_t * ids;
 	size_t nids;
 	libsqfs_off_t offset;
@@ -75,7 +75,7 @@ libsqfs_idtable_map(libsqfs_idtable * idtable, uint32_t id);
 
 /* export table */
 
-typedef struct _libsqfs_export_table {
+typedef struct libsqfs_export_table {
 	libsqfs_off_t offset;
 } libsqfs_export_table;
 
@@ -87,8 +87,8 @@ libsqfs_export_table_write(libsqfs_image_t image, libsqfs_export_table * export_
 
 /* images */
 
-typedef struct _libsqfs_image_options libsqfs_image_options;
-struct _libsqfs_image_options {
+typedef struct libsqfs_image_options libsqfs_image_options;
+struct libsqfs_image_options {
 	bool inode_compression;
 	bool data_compression;
 	bool fragment_compression;
@@ -99,7 +99,7 @@ struct _libsqfs_image_options {
 	size_t block_size, block_size_log;
 };
 
-struct _libsqfs_image {
+struct libsqfs_image {
 	libsqfs_image_options * options;
 	libsqfs_destination_t dst;
 	libsqfs_off_t size;

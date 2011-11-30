@@ -78,7 +78,7 @@ libsqfs_chunk_workq_pop(libsqfs_chunk_workq * workq)
 
 /* chunk base class */
 
-struct _libsqfs_chunk_vmt {
+struct libsqfs_chunk_vmt {
 	/* steps to be performed for chunks -- note that some may be skipped  */
 	bool (*read)(libsqfs_chunk * chunk, libsqfs_image_t image);
 	bool (*deduplicate)(libsqfs_chunk * chunk);

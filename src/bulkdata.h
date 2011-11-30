@@ -43,12 +43,12 @@ pending for another thread to clean up afterwards. If it is successful,
 it will continue writing out deferred items left over by other threads.
 */
 
-typedef struct _libsqfs_chunk libsqfs_chunk;
-typedef struct _libsqfs_fragment_piece libsqfs_fragment_piece;
-typedef struct _libsqfs_fragment_block libsqfs_fragment_block;
-typedef struct _libsqfs_full_block libsqfs_full_block;
-typedef struct _libsqfs_image_block libsqfs_image_block;
-typedef struct _libsqfs_bulkdata libsqfs_bulkdata;
+typedef struct libsqfs_chunk libsqfs_chunk;
+typedef struct libsqfs_fragment_piece libsqfs_fragment_piece;
+typedef struct libsqfs_fragment_block libsqfs_fragment_block;
+typedef struct libsqfs_full_block libsqfs_full_block;
+typedef struct libsqfs_image_block libsqfs_image_block;
+typedef struct libsqfs_bulkdata libsqfs_bulkdata;
 
 /* A "chunk" is a generic piece of bulk data, to be written to the squashfs
 image eventually; chunks come in two flavors:
@@ -84,9 +84,9 @@ typedef enum {
 	libsqfs_chunk_finished = 5
 } libsqfs_chunk_state_t;
 
-typedef struct _libsqfs_chunk_vmt libsqfs_chunk_vmt;
+typedef struct libsqfs_chunk_vmt libsqfs_chunk_vmt;
 
-struct _libsqfs_image_block {
+struct libsqfs_image_block {
 	libsqfs_off_t offset;
 	size_t size;
 	void * data;
@@ -114,18 +114,18 @@ struct _libsqfs_image_block {
 	/* index, to quickly determine order of arbitrary chunks */ \
 	size_t index; \
 
-struct _libsqfs_chunk {
+struct libsqfs_chunk {
 	LIBSQFS_CHUNK_COMMON
 };
 
-struct _libsqfs_full_block {
+struct libsqfs_full_block {
 	LIBSQFS_CHUNK_COMMON
 	
 	/* location where block has been written to disk */
 	libsqfs_image_block dst;
 };
 
-struct _libsqfs_fragment_piece {
+struct libsqfs_fragment_piece {
 	LIBSQFS_CHUNK_COMMON
 	
 	libsqfs_fragment_piece * prev_piece, * next_piece;
@@ -139,7 +139,7 @@ struct _libsqfs_fragment_piece {
 	bool flush_previous_block;
 };
 
-struct _libsqfs_fragment_block {
+struct libsqfs_fragment_block {
 	libsqfs_fragment_block * prev, * next;
 	size_t index, size;
 	
@@ -148,11 +148,11 @@ struct _libsqfs_fragment_block {
 	libsqfs_image_block dst;
 };
 
-typedef struct _libsqfs_chunk_workq {
+typedef struct libsqfs_chunk_workq {
 	libsqfs_chunk * first, * last;
 } libsqfs_chunk_workq;
 
-struct _libsqfs_bulkdata {
+struct libsqfs_bulkdata {
 	struct { libsqfs_chunk * first, * last; size_t count, finished; } chunks;
 	struct { libsqfs_fragment_block * first, * last; size_t count; } fragment_blocks;
 	struct { libsqfs_fragment_piece * first, * last; } fragment_pieces;

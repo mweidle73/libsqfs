@@ -123,7 +123,7 @@ libsqfs_image_options_set_block_size(libsqfs_image_options_t options, size_t blo
 }
 
 void
-libsqfs_image_options_set_compressor(libsqfs_image_options_t options, const struct _libsqfs_compressor * compressor)
+libsqfs_image_options_set_compressor(libsqfs_image_options_t options, const struct libsqfs_compressor * compressor)
 {
 	options->compressor = libsqfs_compressor_copy(compressor);
 }

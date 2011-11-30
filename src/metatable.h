@@ -29,11 +29,11 @@
 
 #include "squashfs_fs.h"
 
-typedef struct _libsqfs_metablock libsqfs_metablock;
-typedef struct _libsqfs_metatable libsqfs_metatable;
-typedef struct _libsqfs_metatable_entry libsqfs_metatable_entry;
+typedef struct libsqfs_metablock libsqfs_metablock;
+typedef struct libsqfs_metatable libsqfs_metatable;
+typedef struct libsqfs_metatable_entry libsqfs_metatable_entry;
 
-struct _libsqfs_metablock {
+struct libsqfs_metablock {
 	libsqfs_metablock * prev, * next;
 	
 	size_t size;
@@ -44,7 +44,7 @@ struct _libsqfs_metablock {
 	char data[SQUASHFS_METADATA_SIZE];
 };
 
-struct _libsqfs_metatable {
+struct libsqfs_metatable {
 	/* list of completely filled metablocks */
 	libsqfs_metablock * first, * last;
 	size_t nmetablocks;
@@ -63,7 +63,7 @@ struct _libsqfs_metatable {
 	libsqfs_off_t offset;
 };
 
-struct _libsqfs_metatable_entry {
+struct libsqfs_metatable_entry {
 	/* offset of the (possibly compressed) begin of the block, relative to
 	the begin of the table */
 	unsigned int block;

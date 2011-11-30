@@ -25,22 +25,22 @@
 
 /* compressor */
 
-typedef struct _libsqfs_compressor_instance libsqfs_compressor_instance;
+typedef struct libsqfs_compressor_instance libsqfs_compressor_instance;
 
-struct _libsqfs_compressor {
+struct libsqfs_compressor {
 	void (*destroy)(libsqfs_compressor * self);
 	libsqfs_compressor * (*copy)(const libsqfs_compressor * self);
 	libsqfs_compressor_instance * (*open)(const libsqfs_compressor * self);
 	int id;
 };
 
-typedef struct _libsqfs_compressor_instance_vmt {
+typedef struct libsqfs_compressor_instance_vmt {
 	void (*destroy)(libsqfs_compressor_instance * i);
 	ssize_t (*compress)(libsqfs_compressor_instance * i,
 		void * dst, size_t dst_size, const void * src, size_t src_size);
 } libsqfs_compressor_instance_vmt;
 
-struct _libsqfs_compressor_instance {
+struct libsqfs_compressor_instance {
 	const libsqfs_compressor_instance_vmt * vmt;
 };
 

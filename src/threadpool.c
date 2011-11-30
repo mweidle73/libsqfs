@@ -21,7 +21,7 @@
 #include <unistd.h>
 #include <signal.h>
 
-struct _libsqfs_worker_thread {
+struct libsqfs_worker_thread {
 	pthread_t handle;
 	libsqfs_worker_thread * prev, * next;
 	

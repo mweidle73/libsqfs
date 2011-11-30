@@ -51,7 +51,7 @@
 	"squashfs_dir_header" immediately preceding it can be indexed.
 */
 
-struct _libsqfs_directory_entry {
+struct libsqfs_directory_entry {
 	/* linked list of all entries */
 	libsqfs_directory_entry * prev, * next;
 	/* list to next "indexed" entry */

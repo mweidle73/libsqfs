@@ -24,8 +24,9 @@
 
 /* data source items */
 
-typedef struct _libsqfs_data_vmt libsqfs_data_vmt;
-struct _libsqfs_data {
+typedef struct libsqfs_data_vmt libsqfs_data_vmt;
+typedef struct libsqfs_data libsqfs_data;
+struct libsqfs_data {
 	const libsqfs_data_vmt * vmt;
 	libsqfs_data_t prev, next;
 	libsqfs_image_t image;

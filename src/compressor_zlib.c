@@ -21,7 +21,7 @@
 
 #include <zlib.h>
 
-typedef struct _libsqfs_compressor_instance_zlib {
+typedef struct libsqfs_compressor_instance_zlib {
 	libsqfs_compressor_instance base;
 	z_stream strm;
 } libsqfs_compressor_instance_zlib;

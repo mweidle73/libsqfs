@@ -24,8 +24,8 @@
 #include "squashfs_fs.h"
 
 
-struct _libsqfs_symlink_inode {
-	struct _libsqfs_inode base;
+struct libsqfs_symlink_inode {
+	struct libsqfs_inode base;
 	
 	char * name;
 };
@@ -111,8 +111,8 @@ libsqfs_symlink_inode_downcast(libsqfs_symlink_inode_t inode)
 	return (libsqfs_inode_t) inode;
 }
 
-struct _libsqfs_device_inode {
-	struct _libsqfs_inode base;
+struct libsqfs_device_inode {
+	struct libsqfs_inode base;
 	
 	char type;
 	unsigned int major, minor;
@@ -219,8 +219,8 @@ libsqfs_device_inode_downcast(libsqfs_device_inode_t inode)
 	return (libsqfs_inode_t) inode;
 }
 
-struct _libsqfs_fifo_inode {
-	struct _libsqfs_inode base;
+struct libsqfs_fifo_inode {
+	struct libsqfs_inode base;
 };
 
 static bool
