@@ -95,7 +95,11 @@ libsqfs_filedata_pread(libsqfs_data_t data, void * buffer, size_t size, libsqfs_
 	/* currently, a new file descriptor is opened for every operation;
 	this obviuosly sucks, but for now it is good enough */
 	libsqfs_filedata * filedata = (libsqfs_filedata *)data;
-	int fd = open(filedata->pathname, O_RDONLY);
+	int fd = open(filedata->pathname, O_RDONLY
+#if defined(O_CLOEXEC)
+		|O_CLOEXEC
+#endif
+	);
 	if (fd<0) return -1;
 	
 	ssize_t count = pread(fd, buffer, size, (off_t)offset);

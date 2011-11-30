@@ -110,7 +110,12 @@ libsqfs_destination_create_for_filedes(int fd)
 libsqfs_destination_t
 libsqfs_destination_create_for_file(const char * name, mode_t mode)
 {
-	int fd = open(name, O_CREAT|O_WRONLY, mode);
+	int fd = open(name, O_CREAT|O_WRONLY
+#if defined(O_CLOEXEC)
+		|O_CLOEXEC
+#endif
+		, mode
+	);
 	if (fd<0) return 0;
 	if (ftruncate(fd, 0)) {
 		int error = errno;

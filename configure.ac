@@ -9,6 +9,7 @@ AC_PROG_LIBTOOL
 AC_CHECK_FUNCS(pread pwrite)
 
 AC_DEFINE([_XOPEN_SOURCE], [500], [Required definition for pread/pwrite])
+AC_DEFINE([_GNU_SOURCE], [1], [Use GNU extensions])
 
 AM_CFLAGS="-Wall -Werror"
 CWARNFLAGS="-Wall -Werror"
