@@ -32,21 +32,58 @@ extern "C"
 /** \brief Type for representing file offsets */
 typedef long long libsqfs_off_t;
 
-/** \brief Compressor for squashfs data and metadata blocks */
-typedef struct libsqfs_compressor libsqfs_compressor;
-
 #define LIBSQFS_HAVE_COMPRESSOR_NULL 1
 
+/**
+	\defgroup compressors Compressors
+	
+	Compressors represent (parameterized) algorithms that
+	are used for reducing the storage size of data in
+	the squashfs image.
+*/
+/*@{*/
+
+/** \brief Compressor algorithm for squashfs data and metadata blocks */
+typedef struct libsqfs_compressor libsqfs_compressor;
+
+/** \brief Compressor algorithm for squashfs data and metadata blocks */
+typedef struct libsqfs_compressor * libsqfs_compressor_t;
+
 #ifdef LIBSQFS_HAVE_COMPRESSOR_NULL
+/** \brief Null compressor algorithm (store data as-is for testing) */
 extern const libsqfs_compressor libsqfs_compressor_null;
 #endif
 #ifdef LIBSQFS_HAVE_COMPRESSOR_ZLIB
+/** \brief Zlib compressor algorithm*/
 extern const libsqfs_compressor libsqfs_compressor_zlib;
 #endif
 #ifdef LIBSQFS_HAVE_COMPRESSOR_LZMA
+/** \brief LZMA compressor algorithm */
 extern const libsqfs_compressor libsqfs_compressor_lzma;
+
+/**
+	\brief Instantiate XZ compressor with default options
+	
+	Instantiate an XZ compressor algorithm with default options.
+	To release the resources associated with it, the compressor
+	must be destroyed through \ref libsqfs_compressor_destroy.
+*/
+libsqfs_compressor_t
+libsqfs_compressor_xz_create_default(void);
 #endif
 
+/**
+	\brief Destroy a compressor algorithm object
+	
+	\param self
+		Compressor to be destroyed
+	
+	Destroy the compressor alogrithm object.
+*/
+void
+libsqfs_compressor_destroy(libsqfs_compressor_t self);
+
+/*@}*/
 
 /**
 	\defgroup output_handler Output handler
@@ -223,9 +260,10 @@ libsqfs_image_options_set_block_size(libsqfs_image_options_t options, size_t blo
 /**
 	\brief Control compressor type
 	\param options Handle for options
-	\param compressor Compressor
+	\param compressor Compressor algorithm
 	
-	Select compressor to be used when compressing data and metadata blocks.
+	Select compression algorithm to be used when compressing data and
+	metadata blocks.
 */
 void
 libsqfs_image_options_set_compressor(libsqfs_image_options_t options, const struct libsqfs_compressor * compressor);

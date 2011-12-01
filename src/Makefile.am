@@ -3,7 +3,7 @@ MAYBE_ZLIB_COMPRESSOR = compressor_zlib.c
 endif
 
 if BUILD_LIBLZMA_COMPRESSOR
-MAYBE_LIBLZMA_COMPRESSOR = compressor_liblzma.c
+MAYBE_LIBLZMA_COMPRESSOR = compressor_liblzma.c compressor_xz.c
 endif
 
 AM_CFLAGS = -I$(top_srcdir)/include $(CWARNFLAGS)
