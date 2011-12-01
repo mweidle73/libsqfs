@@ -46,6 +46,7 @@ libsqfs_symlink_inode_serialize(libsqfs_inode_t inode)
 	*/
 	
 	lnk->base.encoded_type = SQUASHFS_SYMLINK_TYPE;
+	lnk->base.encoded_base_type = SQUASHFS_SYMLINK_TYPE;
 	
 	size_t namelen = strlen(lnk->name);
 	
@@ -126,10 +127,13 @@ libsqfs_device_inode_serialize(libsqfs_inode_t inode)
 	if (!dev->base.attr->xattrset) {
 		struct squashfs_dev_inode_header hdr;
 		
-		if (dev->type == 'c')
+		if (dev->type == 'c') {
 			dev->base.encoded_type = SQUASHFS_CHRDEV_TYPE;
-		else
+			dev->base.encoded_base_type = SQUASHFS_CHRDEV_TYPE;
+		} else {
 			dev->base.encoded_type = SQUASHFS_BLKDEV_TYPE;
+			dev->base.encoded_base_type = SQUASHFS_BLKDEV_TYPE;
+		}
 		
 		hdr.inode_type = cpu_to_le16(dev->base.encoded_type);
 		hdr.mode = cpu_to_le16(dev->base.attr->mode);
@@ -147,10 +151,13 @@ libsqfs_device_inode_serialize(libsqfs_inode_t inode)
 	} else {
 		struct squashfs_ldev_inode_header hdr;
 		
-		if (dev->type == 'c')
+		if (dev->type == 'c') {
 			dev->base.encoded_type = SQUASHFS_LCHRDEV_TYPE;
-		else
+			dev->base.encoded_base_type = SQUASHFS_CHRDEV_TYPE;
+		} else {
 			dev->base.encoded_type = SQUASHFS_LBLKDEV_TYPE;
+			dev->base.encoded_base_type = SQUASHFS_BLKDEV_TYPE;
+		}
 		
 		hdr.inode_type = cpu_to_le16(dev->base.encoded_type);
 		hdr.mode = cpu_to_le16(dev->base.attr->mode);
@@ -221,7 +228,8 @@ libsqfs_fifo_inode_serialize(libsqfs_inode_t inode)
 {
 	libsqfs_fifo_inode_t fifo = (libsqfs_fifo_inode_t) inode;
 	libsqfs_image_t image = fifo->base.image;
-
+	
+	fifo->base.encoded_base_type = SQUASHFS_FIFO_TYPE;
 	if (fifo->base.attr->xattrset)
 		fifo->base.encoded_type = SQUASHFS_LFIFO_TYPE;
 	else

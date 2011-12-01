@@ -48,6 +48,7 @@ libsqfs_regular_inode_serialize(libsqfs_inode_t inode)
 	libsqfs_image_t image = reg->base.image;
 	
 	reg->base.encoded_type = SQUASHFS_FILE_TYPE;
+	reg->base.encoded_base_type = SQUASHFS_FILE_TYPE;
 	if (reg->sparse_size || reg->base.nlink != 1 || reg->file_size > UINT_MAX)
 		reg->base.encoded_type = SQUASHFS_LREG_TYPE;
 	if (reg->base.attr->xattrset)

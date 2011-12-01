@@ -158,7 +158,7 @@ libsqfs_directory_encode(libsqfs_directory_inode_t dir, libsqfs_metatable * tab)
 		p = ent + 1;
 		ent->offset = cpu_to_le16(entry->inode->inode_table_entry.offset);
 		ent->inode_number = cpu_to_le16(entry->inode->inode_number - reference->inode->inode_number);
-		ent->type = cpu_to_le16(entry->inode->encoded_type);
+		ent->type = cpu_to_le16(entry->inode->encoded_base_type);
 		ent->size = cpu_to_le16(namelen - 1);
 		
 		memcpy(p, entry->name, namelen);
@@ -338,6 +338,7 @@ libsqfs_directory_serialize(libsqfs_inode_t inode)
 	picking the extended version only if one of the features of this
 	directory requires it */
 	dir->base.encoded_type = SQUASHFS_DIR_TYPE;
+	dir->base.encoded_base_type = SQUASHFS_DIR_TYPE;
 	if (dir->indexed_count || dir->encoded_entries_size > USHRT_MAX-3)
 		dir->base.encoded_type = SQUASHFS_LDIR_TYPE;
 	

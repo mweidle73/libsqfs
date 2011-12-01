@@ -60,6 +60,7 @@ struct _libsqfs_inode {
 	libsqfs_metatable_entry inode_table_entry;
 	unsigned int inode_number;
 	int encoded_type;
+	int encoded_base_type;
 };
 
 void
