@@ -112,10 +112,17 @@ null_compressor_copy(const libsqfs_compressor * self)
 	return copy;
 }
 
+static libsqfs_compressor_option_data *
+null_get_option_data(const libsqfs_compressor * self)
+{
+	(void) self;
+	return 0;
+}
 
 const libsqfs_compressor libsqfs_compressor_null = {
 	.destroy = &null_compressor_destroy,
 	.copy = &null_compressor_copy,
 	.open = &null_compressor_open,
+	.get_option_data = &null_get_option_data,
 	.id = 0
 };
