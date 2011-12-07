@@ -21,6 +21,7 @@
 #include <libsqfs.h>
 
 #include <errno.h>
+#include <getopt.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -256,18 +257,81 @@ add_directory(libsqfs_image_t image, const char pathname[], libsqfs_inodeattr_t 
 	return dir;
 }
 
-int main(int argc, char ** argv)
+libsqfs_compressor_t
+parse_compressor(const char * descr)
 {
-	if (argc<3) {
-		fprintf(stderr, "Usage: %s [source directory] [destination image]\n", argv[0]);
+	libsqfs_compressor_t compressor = 0;
+	
+	if (strcmp(descr, "null") == 0) {
+		compressor = libsqfs_compressor_copy(&libsqfs_compressor_null);
+	}
+#ifdef LIBSQFS_HAVE_COMPRESSOR_ZLIB
+	else if (strcmp(descr, "zlib") == 0) {
+		compressor = libsqfs_compressor_copy(&libsqfs_compressor_zlib);
+	}
+#endif
+#ifdef LIBSQFS_HAVE_COMPRESSOR_LZMA
+	else if (strcmp(descr, "lzma") == 0) {
+		compressor = libsqfs_compressor_copy(&libsqfs_compressor_lzma);
+	} else if (strcmp(descr, "xz") == 0) {
+		compressor = libsqfs_compressor_xz_create_default();
+	}
+#endif
+	
+	if (!compressor) {
+		fprintf(stderr, "Invalid compressor: '%s'\n", descr);
 		exit(1);
 	}
-	libsqfs_destination_t dest = libsqfs_destination_create_for_file(argv[2], 0644);
-	libsqfs_image_t image = libsqfs_image_create(dest, 0);
+	
+	return compressor;
+}
+
+static void
+parse_options(int argc, char ** argv, libsqfs_image_options_t options, char ** src, char ** dst)
+{
+	static const struct option long_options[] = {
+		{"compressor", 1, 0, 'c'},
+		{0, 0, 0, 0}
+	};
+	
+	for(;;) {
+		int index;
+		int opt = getopt_long(argc, argv, "c:", long_options, &index);
+		if (opt == -1) break;
+		switch(opt) {
+			case 'c': {
+				libsqfs_compressor_t compressor = parse_compressor(optarg);
+				libsqfs_image_options_set_compressor(options, compressor);
+				libsqfs_compressor_destroy(compressor);
+			}
+			default: break;
+		}
+	}
+	
+	if (optind > argc - 2) {
+		fprintf(stderr, "Usage: %s [options] [source directory] [destination image]\n", argv[0]);
+		exit(1);
+	}
+	
+	*src = argv[optind];
+	*dst = argv[optind + 1];
+}
+
+int main(int argc, char ** argv)
+{
+	libsqfs_image_options_t options = libsqfs_image_options_create();
+	
+	char * src = 0, * dst = 0;
+	parse_options(argc, argv, options, &src, &dst);
+	
+	libsqfs_destination_t dest = libsqfs_destination_create_for_file(dst, 0644);
+	libsqfs_image_t image = libsqfs_image_create(dest, options);
+	libsqfs_image_options_destroy(options);
+	
 	libsqfs_image_auto_spawn_threads(image);
 	
 	libsqfs_inodeattr_t attr = libsqfs_inodeattr_create_simple(image, 0, 0, 0755, 0);
-	libsqfs_directory_inode_t root = add_directory(image, argv[1], attr);
+	libsqfs_directory_inode_t root = add_directory(image, src, attr);
 	
 	libsqfs_image_set_root(image, root);
 	libsqfs_image_close(image);
