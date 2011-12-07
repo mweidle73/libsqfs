@@ -73,6 +73,19 @@ libsqfs_compressor_xz_create_default(void);
 #endif
 
 /**
+	\brief Copy a compressor and its settings
+	
+	\param self
+		Compressor to be copied
+	
+	Copy a compressor algorithm including its internal
+	settings.
+*/
+libsqfs_compressor *
+libsqfs_compressor_copy(const libsqfs_compressor * self);
+
+
+/**
 	\brief Destroy a compressor algorithm object
 	
 	\param self

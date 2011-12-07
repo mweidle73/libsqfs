@@ -57,12 +57,6 @@ struct libsqfs_compressor_instance {
 libsqfs_compressor_instance *
 libsqfs_compressor_open(const libsqfs_compressor * compr);
 
-void
-libsqfs_compressor_destroy(libsqfs_compressor * self);
-
-libsqfs_compressor *
-libsqfs_compressor_copy(const libsqfs_compressor * self);
-
 libsqfs_compressor_option_data *
 libsqfs_compressor_get_option_data(const libsqfs_compressor * self);
 
