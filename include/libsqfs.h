@@ -70,6 +70,16 @@ extern const libsqfs_compressor libsqfs_compressor_lzma;
 */
 libsqfs_compressor_t
 libsqfs_compressor_xz_create_default(void);
+
+/**
+	\brief Instantiate XZ compressor with given compression level
+
+	Instantiate an XZ compressor algorithm with given compression level.
+	To release the resources associated with it, the compressor
+	must be destroyed through \ref libsqfs_compressor_destroy.
+*/
+libsqfs_compressor_t
+libsqfs_compressor_xz_create_level(int level);
 #endif
 
 /**

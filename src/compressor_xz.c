@@ -53,6 +53,7 @@ typedef struct libsqfs_compressor_xz {
 	libsqfs_compressor base;
 	int dictionary_size;
 	int flags;
+	uint32_t preset;
 } libsqfs_compressor_xz;
 
 typedef struct libsqfs_compressor_instance_xz {
@@ -61,6 +62,7 @@ typedef struct libsqfs_compressor_instance_xz {
 	lzma_options_lzma lzma_options;
 	int dictionary_size;
 	int flags;
+	uint32_t preset;
 } libsqfs_compressor_instance_xz;
 
 static void
@@ -105,10 +107,11 @@ libsqfs_compressor_xz_open(const libsqfs_compressor * self_)
 	instance->base.vmt = &libsqfs_compressor_instance_xz_vmt;
 	instance->dictionary_size = self->dictionary_size;
 	instance->flags = self->flags;
+	instance->preset = self->preset;
 	
 	size_t n = 0;
 	
-	lzma_lzma_preset(&instance->lzma_options, LZMA_PRESET_DEFAULT);
+	lzma_lzma_preset(&instance->lzma_options, instance->preset);
 	instance->filters[n].id = LZMA_FILTER_LZMA2;
 	instance->filters[n].options = &instance->lzma_options;
 	
@@ -198,6 +201,27 @@ libsqfs_compressor_xz_create_default(void)
 	self->base.id = XZ_COMPRESSION;
 	self->dictionary_size = 0;
 	self->flags = 0;
+	self->preset = LZMA_PRESET_DEFAULT;
 	
+	return &self->base;
+}
+
+libsqfs_compressor *
+libsqfs_compressor_xz_create_level(int level)
+{
+	libsqfs_compressor_xz * self;
+
+	if ((level < 0) || (level > 9)) {
+		fprintf(stderr, "xz: invalid compression level: %d"
+			" (allowed 0..9)\n", level);
+		return 0;
+	}
+
+	self = (libsqfs_compressor_xz *)libsqfs_compressor_xz_create_default();
+	if (!self)
+		return 0;
+
+	self->preset = level;
+
 	return &self->base;
 }
