@@ -125,7 +125,12 @@ libsqfs_image_options_set_block_size(libsqfs_image_options_t options, size_t blo
 void
 libsqfs_image_options_set_compressor(libsqfs_image_options_t options, const struct libsqfs_compressor * compressor)
 {
-	options->compressor = libsqfs_compressor_copy(compressor);
+	libsqfs_compressor_t old_compressor = options->compressor;
+	libsqfs_compressor_t new_compressor = libsqfs_compressor_copy(compressor);
+	if (new_compressor) {
+		options->compressor = new_compressor;
+		libsqfs_compressor_destroy(old_compressor);
+	}
 }
 
 
