@@ -73,17 +73,15 @@ libsqfs_compressor_instance_xz_destroy(libsqfs_compressor_instance * self_)
 }
 
 static ssize_t
-libsqfs_compressor_instance_xz_compress(libsqfs_compressor_instance * self_,
+libsqfs_compressor_instance_xz_compress(libsqfs_compressor_instance_xz * self,
 	void * dst, size_t dst_size, const void * src, size_t src_size)
 {
-	libsqfs_compressor_instance_xz * self = (libsqfs_compressor_instance_xz *)self_;
-	
 	size_t ret_dst_size = 0;
 	lzma_ret res = lzma_stream_buffer_encode(
 		self->filters, LZMA_CHECK_CRC32, NULL,
 		(const uint8_t *) src, src_size,
 		(uint8_t *) dst, &ret_dst_size, dst_size);
-	
+
 	if (res == LZMA_OK) {
 		return ret_dst_size;
 	} else {
@@ -91,9 +89,30 @@ libsqfs_compressor_instance_xz_compress(libsqfs_compressor_instance * self_,
 	}
 }
 
+static ssize_t
+libsqfs_compressor_instance_xz_compress_data(libsqfs_compressor_instance * self_,
+	void * dst, size_t dst_size, const void * src, size_t src_size)
+{
+	libsqfs_compressor_instance_xz * self = (libsqfs_compressor_instance_xz *)self_;
+
+	self->lzma_options.dict_size = self->dictionary_size;
+	return libsqfs_compressor_instance_xz_compress(self, dst, dst_size, src, src_size);
+}
+
+static ssize_t
+libsqfs_compressor_instance_xz_compress_meta(libsqfs_compressor_instance * self_,
+	void * dst, size_t dst_size, const void * src, size_t src_size)
+{
+	libsqfs_compressor_instance_xz * self = (libsqfs_compressor_instance_xz *)self_;
+
+	self->lzma_options.dict_size = SQUASHFS_METADATA_SIZE;
+	return libsqfs_compressor_instance_xz_compress(self, dst, dst_size, src, src_size);
+}
+
 static const libsqfs_compressor_instance_vmt libsqfs_compressor_instance_xz_vmt = {
 	.destroy = &libsqfs_compressor_instance_xz_destroy,
-	.compress = &libsqfs_compressor_instance_xz_compress
+	.compress = &libsqfs_compressor_instance_xz_compress_data,
+	.compress_meta = &libsqfs_compressor_instance_xz_compress_meta
 };
 
 static libsqfs_compressor_instance *
@@ -167,7 +186,9 @@ libsqfs_compressor_xz_get_option_data(const libsqfs_compressor * self_)
 	/* more sanity checks */
 	assert(valid_dictionary_size(self->dictionary_size));
 	
-	if (self->dictionary_size == 0 && self->flags == 0)
+	/* no need to write out defaults */
+	if ((self->dictionary_size == 0 || self->dictionary_size == SQUASHFS_FILE_SIZE)
+		&& self->flags == 0)
 		return 0;
 	
 	libsqfs_compressor_xz_option_data * data = malloc(sizeof(*data));
@@ -199,7 +220,7 @@ libsqfs_compressor_xz_create_default(void)
 	self->base.open = &libsqfs_compressor_xz_open;
 	self->base.get_option_data = &libsqfs_compressor_xz_get_option_data;
 	self->base.id = XZ_COMPRESSION;
-	self->dictionary_size = 0;
+	self->dictionary_size = SQUASHFS_FILE_SIZE;
 	self->flags = 0;
 	self->preset = LZMA_PRESET_DEFAULT;
 	

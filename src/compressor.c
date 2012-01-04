@@ -59,6 +59,13 @@ libsqfs_compressor_instance_compress(libsqfs_compressor_instance * i,
 	return i->vmt->compress(i, dst, dst_size, src, src_size);
 }
 
+ssize_t
+libsqfs_compressor_instance_compress_meta(libsqfs_compressor_instance * i,
+	void * dst, size_t dst_size, const void * src, size_t src_size)
+{
+	return i->vmt->compress_meta(i, dst, dst_size, src, src_size);
+}
+
 void
 libsqfs_compressor_instance_destroy(libsqfs_compressor_instance * i)
 {

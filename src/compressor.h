@@ -48,6 +48,8 @@ typedef struct libsqfs_compressor_instance_vmt {
 	void (*destroy)(libsqfs_compressor_instance * i);
 	ssize_t (*compress)(libsqfs_compressor_instance * i,
 		void * dst, size_t dst_size, const void * src, size_t src_size);
+	ssize_t (*compress_meta)(libsqfs_compressor_instance * i,
+		void * dst, size_t dst_size, const void * src, size_t src_size);
 } libsqfs_compressor_instance_vmt;
 
 struct libsqfs_compressor_instance {
@@ -66,6 +68,10 @@ the compressed representation turns out to be larger than the provided
 buffer), (size_t)-1 is returned */
 ssize_t
 libsqfs_compressor_instance_compress(libsqfs_compressor_instance * i,
+	void * dst, size_t dst_size, const void * src, size_t src_size);
+
+ssize_t
+libsqfs_compressor_instance_compress_meta(libsqfs_compressor_instance * i,
 	void * dst, size_t dst_size, const void * src, size_t src_size);
 
 void

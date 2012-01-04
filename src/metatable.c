@@ -67,8 +67,8 @@ libsqfs_metatable_flush(libsqfs_metatable * tab)
 	ssize_t compressed_size = -1;
 	
 	if (tab->compressor)
-		compressed_size = libsqfs_compressor_instance_compress(tab->compressor,
-			buffer, block->size, block->data, block->size);
+		compressed_size = libsqfs_compressor_instance_compress_meta(tab->compressor,
+			buffer, sizeof(buffer), block->data, block->size);
 	
 	if (compressed_size != -1) {
 		memcpy(block->data, buffer, compressed_size);

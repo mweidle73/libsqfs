@@ -58,7 +58,8 @@ libsqfs_compressor_instance_zlib_compress(libsqfs_compressor_instance * self_,
 
 static const libsqfs_compressor_instance_vmt libsqfs_compressor_instance_zlib_vmt = {
 	.destroy = &libsqfs_compressor_instance_zlib_destroy,
-	.compress = &libsqfs_compressor_instance_zlib_compress
+	.compress = &libsqfs_compressor_instance_zlib_compress,
+	.compress_meta = &libsqfs_compressor_instance_zlib_compress
 };
 
 static libsqfs_compressor_instance *

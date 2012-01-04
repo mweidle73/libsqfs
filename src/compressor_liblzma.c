@@ -73,7 +73,8 @@ libsqfs_compressor_instance_lzma_compress(libsqfs_compressor_instance * self_,
 
 static const libsqfs_compressor_instance_vmt libsqfs_compressor_instance_lzma_vmt = {
 	.destroy = &libsqfs_compressor_instance_lzma_destroy,
-	.compress = &libsqfs_compressor_instance_lzma_compress
+	.compress = &libsqfs_compressor_instance_lzma_compress,
+	.compress_meta = &libsqfs_compressor_instance_lzma_compress
 };
 
 static libsqfs_compressor_instance *
