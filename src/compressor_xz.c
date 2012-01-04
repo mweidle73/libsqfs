@@ -38,6 +38,9 @@
 
 #include "internal.h"
 
+#include <assert.h>
+#include <stdio.h>
+#include <strings.h>
 #include <lzma.h>
 
 /* on-disk layout of compressor options */
@@ -134,27 +137,51 @@ libsqfs_compressor_xz_copy(const libsqfs_compressor * self_)
 	return &copy->base;
 }
 
+static inline bool
+valid_dictionary_size(size_t size)
+{
+	if (size == 0)
+		return true;
+	
+	/* checks for size are taken from mksquashfs */
+	/* 8192 is a minimum, 1048576 is the max. block size */
+	if ((size < 8192) || (size > 1048576))
+		return false;
+	
+	/* 2^n and 2^n+2^(n+1) */
+	int n = ffs(size) - 1;
+	return size == (1 << n) || size == (3 << n);
+}
+
 static libsqfs_compressor_option_data *
 libsqfs_compressor_xz_get_option_data(const libsqfs_compressor * self_)
 {
 	const libsqfs_compressor_xz * self = (const libsqfs_compressor_xz *) self_;
-	if (self->dictionary_size || self->flags) {
-		libsqfs_compressor_xz_option_data * data = malloc(sizeof(*data));
-		if (!data)
-			return 0;
-		libsqfs_compressor_option_data * opts = malloc(sizeof(*opts));
-		if (!opts) {
-			free(data);
-			return 0;
-		}
-		data->dictionary_size = cpu_to_le32(self->dictionary_size);
-		data->flags = cpu_to_le32(self->flags);
-		opts->data = data;
-		opts->size = sizeof(data);
+	
+	/* Atm. changing flags is not supported, so if it is set it might
+	 * be messed up */
+	assert(self->flags == 0);
+	/* more sanity checks */
+	assert(valid_dictionary_size(self->dictionary_size));
+	
+	if (self->dictionary_size == 0 && self->flags == 0)
 		return 0;
-		
+	
+	libsqfs_compressor_xz_option_data * data = malloc(sizeof(*data));
+	if (!data)
+		return 0;
+	
+	libsqfs_compressor_option_data * opts = malloc(sizeof(*opts));
+	if (!opts) {
+		free(data);
+		return 0;
 	}
-	return 0;
+	
+	data->dictionary_size = cpu_to_le32(self->dictionary_size);
+	data->flags = cpu_to_le32(self->flags);
+	opts->data = data;
+	opts->size = sizeof(*data);
+	return opts;
 }
 
 libsqfs_compressor *
