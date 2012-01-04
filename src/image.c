@@ -266,7 +266,7 @@ libsqfs_image_write_compressor_options(libsqfs_image_t image)
 	if (count != 2) return false;
 	
 	count = libsqfs_pwrite(image->dst, data, size, image->compressor_option_data_loc + 2);
-	return count == sizeof(size);
+	return count == size;
 }
 
 libsqfs_image_state_t
