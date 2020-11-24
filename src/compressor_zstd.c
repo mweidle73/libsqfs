@@ -1,8 +1,8 @@
 /*
  * Library for creating squashfs filesystem images.
  *
- * Copyright (c) 2011
- * secunet Security Networks AG, Helge Bahmann <helge.bahmann@secunet.com>
+ * Copyright (c) 2020
+ * secunet Security Networks AG, Markus Theil <markus.theil@secunet.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
