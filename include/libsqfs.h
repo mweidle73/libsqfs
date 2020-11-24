@@ -57,6 +57,10 @@ extern const libsqfs_compressor libsqfs_compressor_null;
 /** \brief Zlib compressor algorithm*/
 extern const libsqfs_compressor libsqfs_compressor_zlib;
 #endif
+#ifdef LIBSQFS_HAVE_COMPRESSOR_ZSTD
+/** \brief Zstd compressor algorithm*/
+extern const libsqfs_compressor libsqfs_compressor_zstd;
+#endif
 #ifdef LIBSQFS_HAVE_COMPRESSOR_LZMA
 /** \brief LZMA compressor algorithm */
 extern const libsqfs_compressor libsqfs_compressor_lzma;
