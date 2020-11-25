@@ -36,7 +36,7 @@ static ssize_t
 libsqfs_compressor_instance_zstd_compress(libsqfs_compressor_instance * self_,
 	void * dst, size_t dst_size, const void * src, size_t src_size)
 {
-	const int zstd_def_compression_level = 15;
+	const int zstd_def_compression_level = ZSTD_CLEVEL_DEFAULT;
 	size_t ret = ZSTD_compress(dst, dst_size, src, src_size, zstd_def_compression_level);
 
 	if (ZSTD_isError(ret)) {
