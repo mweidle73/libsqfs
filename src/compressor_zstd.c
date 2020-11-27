@@ -18,11 +18,17 @@
  */
 
 #include "internal.h"
-
+#include <stdio.h>
 #include <zstd.h>
+
+typedef struct libsqfs_compressor_zstd {
+	libsqfs_compressor base;
+	uint32_t preset;
+} libsqfs_compressor_zstd;
 
 typedef struct libsqfs_compressor_instance_zstd {
 	libsqfs_compressor_instance base;
+	uint32_t preset;
 } libsqfs_compressor_instance_zstd;
 
 static void
@@ -33,64 +39,111 @@ libsqfs_compressor_instance_zstd_destroy(libsqfs_compressor_instance * self_)
 }
 
 static ssize_t
-libsqfs_compressor_instance_zstd_compress(libsqfs_compressor_instance * self_,
+libsqfs_compressor_instance_zstd_compress(libsqfs_compressor_instance_zstd * self_,
 	void * dst, size_t dst_size, const void * src, size_t src_size)
 {
-	const int zstd_def_compression_level = ZSTD_CLEVEL_DEFAULT;
-	size_t ret = ZSTD_compress(dst, dst_size, src, src_size, zstd_def_compression_level);
+	libsqfs_compressor_instance_zstd * self = (libsqfs_compressor_instance_zstd *)self_;
+	size_t ret = ZSTD_compress(dst, dst_size, src, src_size, self->preset);
 
-	if (ZSTD_isError(ret)) {
+	if (!ZSTD_isError(ret))
+		return (ssize_t)ret;
+	else
 		return -1;
-	} else {
-		return (ssize_t) ret;
-	}
+}
+
+static ssize_t
+libsqfs_compressor_instance_zstd_compress_data(libsqfs_compressor_instance * self_,
+	void * dst, size_t dst_size, const void * src, size_t src_size)
+{
+	libsqfs_compressor_instance_zstd * self = (libsqfs_compressor_instance_zstd *)self_;
+	return libsqfs_compressor_instance_zstd_compress(self, dst, dst_size, src, src_size);
+}
+
+static ssize_t
+libsqfs_compressor_instance_zstd_compress_meta(libsqfs_compressor_instance * self_,
+	void * dst, size_t dst_size, const void * src, size_t src_size)
+{
+	libsqfs_compressor_instance_zstd * self = (libsqfs_compressor_instance_zstd *)self_;
+	return libsqfs_compressor_instance_zstd_compress(self, dst, dst_size, src, src_size);
 }
 
 static const libsqfs_compressor_instance_vmt libsqfs_compressor_instance_zstd_vmt = {
 	.destroy = &libsqfs_compressor_instance_zstd_destroy,
-	.compress = &libsqfs_compressor_instance_zstd_compress,
-	.compress_meta = &libsqfs_compressor_instance_zstd_compress
+	.compress = &libsqfs_compressor_instance_zstd_compress_data,
+	.compress_meta = &libsqfs_compressor_instance_zstd_compress_meta
 };
 
 static libsqfs_compressor_instance *
-libsqfs_compressor_zstd_open(const libsqfs_compressor * self)
+libsqfs_compressor_zstd_open(const libsqfs_compressor * self_)
 {
-	(void) self;
+	const libsqfs_compressor_zstd * self = (const libsqfs_compressor_zstd *) self_;
 	libsqfs_compressor_instance_zstd * instance = malloc(sizeof(*instance));
 	if (!instance)
 		return 0;
 	
 	instance->base.vmt = &libsqfs_compressor_instance_zstd_vmt;
+	instance->preset = self->preset;
 	
 	return &instance->base;
 }
 
 static void
-libsqfs_compressor_zstd_destroy(libsqfs_compressor * self)
+libsqfs_compressor_zstd_destroy(libsqfs_compressor * self_)
 {
+	libsqfs_compressor_zstd * self = (libsqfs_compressor_zstd *) self_;
 	free(self);
 }
 
 static libsqfs_compressor *
-libsqfs_compressor_zstd_copy(const libsqfs_compressor * self)
+libsqfs_compressor_zstd_copy(const libsqfs_compressor * self_)
 {
-	libsqfs_compressor * copy = malloc(sizeof(*copy));
+	const libsqfs_compressor_zstd * self = (const libsqfs_compressor_zstd *) self_;
+	libsqfs_compressor_zstd * copy = malloc(sizeof(*copy));
 	if (!copy) return 0;
 	*copy = *self;
 	
-	return copy;
+	return &copy->base;
 }
 
 static libsqfs_compressor_option_data *
-libsqfs_compressor_zstd_get_option_data(const libsqfs_compressor * self)
+libsqfs_compressor_zstd_get_option_data(const libsqfs_compressor * self_)
 {
-	return 0;
+	return NULL;
 }
 
-const libsqfs_compressor libsqfs_compressor_zstd = {
-	.destroy = &libsqfs_compressor_zstd_destroy,
-	.copy = &libsqfs_compressor_zstd_copy,
-	.open = &libsqfs_compressor_zstd_open,
-	.get_option_data = &libsqfs_compressor_zstd_get_option_data,
-	.id = ZSTD_COMPRESSION
-};
+libsqfs_compressor *
+libsqfs_compressor_zstd_create_default(void)
+{
+	libsqfs_compressor_zstd * self = malloc(sizeof(*self));
+	if (!self)
+		return 0;
+	
+	self->base.destroy = &libsqfs_compressor_zstd_destroy;
+	self->base.copy = &libsqfs_compressor_zstd_copy;
+	self->base.open = &libsqfs_compressor_zstd_open;
+	self->base.get_option_data = &libsqfs_compressor_zstd_get_option_data;
+	self->base.id = ZSTD_COMPRESSION;
+	self->preset = ZSTD_CLEVEL_DEFAULT;
+	
+	return &self->base;
+}
+
+libsqfs_compressor *
+libsqfs_compressor_zstd_create_level(int level)
+{
+	libsqfs_compressor_zstd * self;
+
+	if ((level < 0) || (level > 22)) {
+		fprintf(stderr, "zstd: invalid compression level: %d"
+			" (allowed 0..22)\n", level);
+		return 0;
+	}
+
+	self = (libsqfs_compressor_zstd *)libsqfs_compressor_zstd_create_default();
+	if (!self)
+		return 0;
+
+	self->preset = level;
+
+	return &self->base;
+}
