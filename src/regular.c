@@ -110,6 +110,10 @@ libsqfs_regular_inode_serialize(libsqfs_inode_t inode)
 			return false;
 	}
 	
+	/* A file stored entirely in a fragment has no block-size entries. */
+	if (!reg->nblocks)
+		return true;
+
 	unsigned int block_info[reg->nblocks];
 	size_t n;
 	for(n=0; n<reg->nblocks; n++) {

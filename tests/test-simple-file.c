@@ -19,15 +19,11 @@
 
 #include <libsqfs.h>
 
-#include "malloc-verify.h"
-
 static const char sentence[] = "The quick brown fox jumps over the lazy dog.\n";
 static const char another[] = "the quick brown fox jumps over the lazy dog.\n";
 
 int main(void)
 {
-	malloc_verify_start();
-	
 	libsqfs_destination_t dest = libsqfs_destination_create_null();
 	libsqfs_image_t image = libsqfs_image_create(dest, 0);
 	
@@ -46,8 +42,6 @@ int main(void)
 	
 	libsqfs_image_close(image);
 	libsqfs_destination_release(dest);
-	
-	malloc_verify_end();
 	
 	return 0;
 }

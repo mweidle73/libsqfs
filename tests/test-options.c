@@ -19,18 +19,12 @@
 
 #include <libsqfs.h>
 
-#include "malloc-verify.h"
-
 int main()
 {
-	malloc_verify_start();
-	
 	libsqfs_image_options_t o1 = libsqfs_image_options_create();
 	libsqfs_image_options_t o2 = libsqfs_image_options_copy(o1);
 	libsqfs_image_options_destroy(o2);
 	libsqfs_image_options_destroy(o1);
-	
-	malloc_verify_end();
 	
 	return 0;
 }

@@ -27,6 +27,7 @@
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/sysmacros.h>
 #include <sys/xattr.h>
 
 #include <unistd.h>
@@ -179,7 +180,7 @@ add_directory(libsqfs_image_t image, const char pathname[], libsqfs_inodeattr_t 
 	fprintf(stderr, "Add directory %s\n", pathname);
 	libsqfs_directory_inode_t dir = libsqfs_directory_inode_create(image, attr);
 	
-	dir_entry_name * first = 0, * last = 0, *current;
+	dir_entry_name * first = 0, *current;
 	
 	/* scan directory, sort entries, and treat files first */
 	DIR * srcdir = opendir(pathname);
@@ -190,9 +191,13 @@ add_directory(libsqfs_image_t image, const char pathname[], libsqfs_inodeattr_t 
 		
 		current = malloc(sizeof(*current));
 		strcpy(current->name, entry->d_name);
-		strncpy(current->path, pathname, sizeof(current->name));
-		strncat(current->path, "/", sizeof(current->name));
-		strncat(current->path, entry->d_name, sizeof(current->name));
+		int path_len = snprintf(current->path, sizeof(current->path),
+			"%s/%s", pathname, entry->d_name);
+		if (path_len < 0 || (size_t) path_len >= sizeof(current->path)) {
+			fprintf(stderr, "Path is too long: %s/%s\n",
+				pathname, entry->d_name);
+			exit(1);
+		}
 		lstat(current->path, &current->st);
 		
 		dir_entry_name * insert_before = first, * insert_after = 0;
@@ -207,7 +212,6 @@ add_directory(libsqfs_image_t image, const char pathname[], libsqfs_inodeattr_t 
 		if (insert_after) insert_after->next = current;
 		else first = current;
 		if (insert_before) insert_before->prev = current;
-		else last = current;
 	}
 		
 	closedir(srcdir);
