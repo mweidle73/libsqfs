@@ -1,0 +1,49 @@
+name: Trixie CI
+
+on:
+  push:
+    branches:
+      - abuild-gh
+  pull_request:
+    branches:
+      - abuild-gh
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: trixie-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    name: Build and test
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out libsqfs
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Verify the GitHub-only overlay
+        shell: bash
+        run: |
+          set -euo pipefail
+          git show-ref --verify refs/remotes/origin/abuild
+          git merge-base --is-ancestor origin/abuild HEAD
+          unexpected=$(
+            git diff --name-only origin/abuild...HEAD |
+              grep -Ev '^\.github/' || true
+          )
+          if test -n "$unexpected"; then
+            echo "abuild-gh contains changes outside .github/:" >&2
+            echo "$unexpected" >&2
+            exit 1
+          fi
+
+      - name: Run Trixie and sanitizer checks
+        run: .github/ci/run .github/ci/check

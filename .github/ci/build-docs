@@ -1,0 +1,16 @@
+#!/bin/sh
+
+set -eu
+
+if test -f Makefile; then
+    make distclean
+fi
+
+./autogen.sh --disable-shared
+make doc
+
+test -s doc/index.html
+grep -Fq 'Repository status' doc/index.html
+grep -Fq 'libsqfs_compressor_zstd_create_default' \
+    doc/libsqfs_8h_source.html
+test -z "$(find doc -type l -print -quit)"

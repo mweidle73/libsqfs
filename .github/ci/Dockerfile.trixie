@@ -1,0 +1,24 @@
+FROM debian:trixie
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# The inherited Autotools setup requires GNU awk during configuration.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    autoconf \
+    automake \
+    build-essential \
+    ca-certificates \
+    doxygen \
+    gawk \
+    graphviz \
+    liblzma-dev \
+    libtool \
+    libzstd-dev \
+    pkg-config \
+    squashfs-tools \
+    zlib1g-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /work
+
+CMD ["/bin/sh"]

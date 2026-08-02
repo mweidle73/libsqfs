@@ -1,0 +1,46 @@
+#!/bin/sh
+
+set -eu
+
+clean_build()
+{
+    if test -f Makefile; then
+        make distclean
+    fi
+}
+
+check_zstd_image()
+{
+    workdir=$(mktemp -d)
+    trap 'rm -rf "$workdir"' EXIT HUP INT TERM
+
+    mkdir -p "$workdir/source/etc"
+    printf '%s\n' 'libsqfs zstd interoperability' \
+        > "$workdir/source/etc/payload"
+
+    ./examples/mksqfs --compressor zstd \
+        "$workdir/source" "$workdir/zstd.squashfs"
+    unsquashfs -s "$workdir/zstd.squashfs" |
+        grep -F 'Compression zstd'
+    test "$(unsquashfs -cat \
+        "$workdir/zstd.squashfs" etc/payload)" = \
+        'libsqfs zstd interoperability'
+
+    rm -rf "$workdir"
+    trap - EXIT HUP INT TERM
+}
+
+clean_build
+./autogen.sh --disable-shared
+make -j8
+make check
+check_zstd_image
+
+clean_build
+./autogen.sh --disable-shared \
+    CFLAGS='-O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer' \
+    LDFLAGS='-fsanitize=address,undefined'
+make -j8
+ASAN_OPTIONS='detect_leaks=1:halt_on_error=1' \
+UBSAN_OPTIONS='halt_on_error=1:print_stacktrace=1' \
+    make check
