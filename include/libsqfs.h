@@ -58,8 +58,26 @@ extern const libsqfs_compressor libsqfs_compressor_null;
 extern const libsqfs_compressor libsqfs_compressor_zlib;
 #endif
 #ifdef LIBSQFS_HAVE_COMPRESSOR_ZSTD
-/** \brief Zstd compressor algorithm*/
-extern const libsqfs_compressor libsqfs_compressor_zstd;
+/**
+	\brief Instantiate Zstd compressor with default options
+
+	Instantiate a Zstd compressor algorithm with the library's default
+	compression level. To release the resources associated with it, the
+	compressor must be destroyed through \ref libsqfs_compressor_destroy.
+*/
+libsqfs_compressor_t
+libsqfs_compressor_zstd_create_default(void);
+
+/**
+	\brief Instantiate Zstd compressor with given compression level
+
+	\param level Compression level from 0 through 22. Level 0 selects the
+		libzstd default.
+	\return Compressor handle, or NULL if the level is invalid or memory
+		allocation fails.
+*/
+libsqfs_compressor_t
+libsqfs_compressor_zstd_create_level(int level);
 #endif
 #ifdef LIBSQFS_HAVE_COMPRESSOR_LZMA
 /** \brief LZMA compressor algorithm */

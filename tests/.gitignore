@@ -5,3 +5,5 @@ test-options
 test-simple-file
 test-special-files
 compounddata
+test-zstd
+zstd-image

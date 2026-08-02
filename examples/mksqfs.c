@@ -274,6 +274,11 @@ parse_compressor(const char * descr)
 		compressor = libsqfs_compressor_copy(&libsqfs_compressor_zlib);
 	}
 #endif
+#ifdef LIBSQFS_HAVE_COMPRESSOR_ZSTD
+	else if (strcmp(descr, "zstd") == 0) {
+		compressor = libsqfs_compressor_zstd_create_default();
+	}
+#endif
 #ifdef LIBSQFS_HAVE_COMPRESSOR_LZMA
 	else if (strcmp(descr, "lzma") == 0) {
 		compressor = libsqfs_compressor_copy(&libsqfs_compressor_lzma);

@@ -25,4 +25,11 @@ test_special_files_LDADD = $(libsqfs)
 compounddata_SOURCES = compounddata.c
 compounddata_LDADD = $(libsqfs)
 
+if BUILD_LIBZSTD_COMPRESSOR
+check_PROGRAMS += test-zstd
+
+test_zstd_SOURCES = test-zstd.c
+test_zstd_LDADD = $(libsqfs)
+endif
+
 TESTS = $(check_PROGRAMS)

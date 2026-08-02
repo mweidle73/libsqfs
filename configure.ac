@@ -49,6 +49,9 @@ _EOF_
   if test x$HAVE_LIBLZMA = xyes ; then
     echo '#define LIBSQFS_HAVE_COMPRESSOR_LZMA 1' >> $tmpfile
   fi
+  if test x$HAVE_LIBZSTD = xyes ; then
+    echo '#define LIBSQFS_HAVE_COMPRESSOR_ZSTD 1' >> $tmpfile
+  fi
 cat >> $tmpfile << _EOF_
 
 #endif
