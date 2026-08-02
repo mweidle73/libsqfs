@@ -15,4 +15,9 @@ lib_LTdir = $(libdir)
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = libsqfs.pc
 
-EXTRA_DIST = libsqfs.pc.in
+EXTRA_DIST = libsqfs.pc.in README.md doxygen.conf
+
+.PHONY: doc
+
+doc:
+	doxygen doxygen.conf
