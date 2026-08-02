@@ -47,3 +47,26 @@ jobs:
 
       - name: Run Trixie and sanitizer checks
         run: .github/ci/run .github/ci/check
+
+      - name: Publish the source coverage summary
+        if: always()
+        shell: bash
+        run: |
+          if test -s doc/coverage/summary.txt; then
+            {
+              echo '### libsqfs source coverage'
+              echo '```text'
+              cat doc/coverage/summary.txt
+              echo '```'
+              echo 'Coverage is informative; no threshold is enforced.'
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload the source coverage report
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: source-coverage
+          path: doc/coverage/
+          if-no-files-found: error
+          retention-days: 7

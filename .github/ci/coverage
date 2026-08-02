@@ -1,0 +1,64 @@
+#!/bin/sh
+
+set -eu
+
+SCRIPT_DIR=$(CDPATH= cd "$(dirname "$0")" && pwd -P)
+REPOSITORY_ROOT=$(CDPATH= cd "$SCRIPT_DIR/../.." && pwd -P)
+REPORT_DIR="$REPOSITORY_ROOT/doc/coverage"
+WORK_DIR=$(mktemp -d)
+
+cleanup()
+{
+    rm -rf "$WORK_DIR"
+}
+
+trap cleanup EXIT HUP INT TERM
+cd "$REPOSITORY_ROOT"
+
+if test -f Makefile; then
+    make distclean
+fi
+rm -rf "$REPORT_DIR"
+rm -f ./*.gcda ./*.gcno \
+    src/*.gcda src/*.gcno \
+    tests/*.gcda tests/*.gcno \
+    examples/*.gcda examples/*.gcno
+
+printf '%s\n' 'coverage: configuring instrumented build'
+./autogen.sh --disable-shared \
+    CFLAGS='-O0 -g --coverage' \
+    LDFLAGS='--coverage'
+
+printf '%s\n' 'coverage: compiling production code and tests'
+make -j8
+
+# Capture a zero-count baseline before executing the suite. Without it,
+# completely unexecuted source files disappear from the resulting report.
+lcov --branch-coverage --capture --initial \
+    --directory src \
+    --output-file "$WORK_DIR/baseline.info"
+
+printf '%s\n' 'coverage: running unit tests'
+make check
+
+printf '%s\n' 'coverage: collecting production-source results'
+lcov --branch-coverage --capture \
+    --directory src \
+    --output-file "$WORK_DIR/test.info"
+lcov --branch-coverage \
+    --add-tracefile "$WORK_DIR/baseline.info" \
+    --add-tracefile "$WORK_DIR/test.info" \
+    --output-file "$WORK_DIR/all.info"
+lcov --branch-coverage \
+    --extract "$WORK_DIR/all.info" "$REPOSITORY_ROOT/src/*" \
+    --output-file "$WORK_DIR/libsqfs.info"
+
+genhtml --branch-coverage \
+    --output-directory "$REPORT_DIR" \
+    "$WORK_DIR/libsqfs.info"
+cp "$WORK_DIR/libsqfs.info" "$REPORT_DIR/coverage.info"
+
+printf '\n%s\n' 'coverage: production-source summary'
+lcov --branch-coverage --summary "$WORK_DIR/libsqfs.info" \
+    > "$REPORT_DIR/summary.txt" 2>&1
+cat "$REPORT_DIR/summary.txt"
