@@ -23,6 +23,8 @@ test-driver
 *.o
 *.lo
 *.la
+*.gcda
+*.gcno
 *.log
 *.trs
 doc

@@ -56,7 +56,9 @@ special files, directory layout, extended attributes, compound data items and
 the public Zstd interface. The GitHub workflow additionally runs the suite
 with AddressSanitizer, LeakSanitizer and UndefinedBehaviorSanitizer, and checks
 a Zstd-compressed image with the distribution's independent `unsquashfs`
-reader.
+reader. It also publishes an informative HTML source-coverage report. The
+report retains zero-count data for compiled sources that no test executes; no
+coverage threshold is enforced.
 
 Build the API documentation with:
 
