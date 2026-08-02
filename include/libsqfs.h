@@ -41,7 +41,7 @@ typedef long long libsqfs_off_t;
 	are used for reducing the storage size of data in
 	the squashfs image.
 */
-/*@{*/
+/** @{ */
 
 /** \brief Compressor algorithm for squashfs data and metadata blocks */
 typedef struct libsqfs_compressor libsqfs_compressor;
@@ -128,7 +128,7 @@ libsqfs_compressor_copy(const libsqfs_compressor * self);
 void
 libsqfs_compressor_destroy(libsqfs_compressor_t self);
 
-/*@}*/
+/** @} */
 
 /**
 	\defgroup output_handler Output handler
@@ -136,7 +136,7 @@ libsqfs_compressor_destroy(libsqfs_compressor_t self);
 	Handler for writing data to intended output target. This abstraction
 	allows for creation of images in files, in memory or other destinations.
 */
-/*@{*/
+/** @{ */
 
 /**
 	\brief @c squashfs image output target
@@ -182,19 +182,19 @@ libsqfs_destination_create_for_file(const char * name, mode_t mode);
 libsqfs_destination_t
 libsqfs_destination_create_null(void);
 
-/*@}*/
+/** @} */
 
 /**
 	\defgroup images Squashfs images
 */
-/*@{*/
+/** @{ */
 
 /**
 	\defgroup image_options Squashfs image options
 	
 	Options controlling the on-disk layout of the generated filesystem image
 */
-/*@{*/
+/** @{ */
 
 /** \brief Options controlling creation of fragment blocks */
 typedef enum {
@@ -313,7 +313,7 @@ libsqfs_image_options_set_block_size(libsqfs_image_options_t options, size_t blo
 void
 libsqfs_image_options_set_compressor(libsqfs_image_options_t options, const struct libsqfs_compressor * compressor);
 
-/*@}*/
+/** @} */
 
 /**
 	\brief @c squashfs image handle
@@ -357,7 +357,7 @@ libsqfs_image_create(libsqfs_destination_t destination, libsqfs_image_options_t 
 	required in image creation (reading data, compression, writing
 	data to the image).
 */
-/*@{*/
+/** @{ */
 /**
 	\brief Spawn worker threads
 	\param image @c squashfs image handle
@@ -409,7 +409,7 @@ libsqfs_image_auto_spawn_threads(libsqfs_image_t image);
 void
 libsqfs_image_worker_thread_function(libsqfs_image_t image);
 
-/*@}*/
+/** @} */
 
 /**
 	\brief Query state of @c squashfs image
@@ -501,21 +501,21 @@ libsqfs_image_error_message(libsqfs_image_t image);
 void
 libsqfs_image_error_clear(libsqfs_image_t image);
 
-/*@}*/
+/** @} */
 
 /**
 	\defgroup inodes Inodes
 	
 	File-system objects (aka "inodes")
 */
-/*@{*/
+/** @{ */
 
 /**
 	\defgroup inode_attrs Inode attributes
 	
 	Various attributes that may be attached to an inode
 */
-/*@{*/
+/** @{ */
 
 /**
 	\brief Inode attributes
@@ -587,7 +587,7 @@ libsqfs_xattrset_create(libsqfs_image_t image, size_t nattrs, libsqfs_xattr_t at
 libsqfs_inodeattr_t
 libsqfs_inodeattr_create_extended(libsqfs_image_t image, uid_t uid, gid_t gid, mode_t mode, time_t ctime, libsqfs_xattrset_t xattr);
 
-/*@}*/
+/** @} */
 
 /**
 	\brief Base handle type for all filesystem objects
@@ -618,12 +618,12 @@ libsqfs_inode_get_class(libsqfs_inode_t inode);
 /**
 	\defgroup regular_inodes Regular (aka "file") inodes
 */
-/*@{*/
+/** @{ */
 
 /**
 	\defgroup regular_inode_data File data
 */
-/*@{*/
+/** @{ */
 
 /**
 	\brief File data content handle
@@ -711,7 +711,7 @@ libsqfs_data_t
 libsqfs_data_create_compound(libsqfs_image_t image, size_t npieces,
 	const libsqfs_data_piece pieces[]);
 
-/*@}*/
+/** @} */
 
 /**
 	\brief Regular ("file") inode handle
@@ -766,12 +766,12 @@ libsqfs_regular_inode_cast(libsqfs_inode_t inode)
 		return 0;
 }
 
-/*@}*/
+/** @} */
 
 /**
 	\defgroup directory_inodes Directory inodes
 */
-/*@{*/
+/** @{ */
 
 /**
 	\brief Directory inode
@@ -845,12 +845,12 @@ libsqfs_directory_inode_cast(libsqfs_inode_t inode)
 		return 0;
 }
 
-/*@}*/
+/** @} */
 
 /**
 	\defgroup symlink_inodes Symlink inodes
 */
-/*@{*/
+/** @{ */
 
 /**
 	\brief Symlink inode
@@ -901,12 +901,12 @@ libsqfs_symlink_inode_cast(libsqfs_inode_t inode)
 		return 0;
 }
 
-/*@}*/
+/** @} */
 
 /**
 	\defgroup device_inodes Device inodes
 */
-/*@{*/
+/** @{ */
 
 /**
 	\brief Device inode
@@ -959,12 +959,12 @@ libsqfs_device_inode_cast(libsqfs_inode_t inode)
 		return 0;
 }
 
-/*@}*/
+/** @} */
 
 /**
-	\defgroup device_inodes Device inodes
+	\defgroup fifo_inodes FIFO inodes
 */
-/*@{*/
+/** @{ */
 
 /**
 	\brief FIFO inode
@@ -1014,13 +1014,13 @@ libsqfs_fifo_inode_cast(libsqfs_inode_t inode)
 		return 0;
 }
 
-/*@}*/
+/** @} */
 
-/*@}*/
+/** @} */
 
 
 /** \addtogroup images */
-/*@{*/
+/** @{ */
 
 /**
 	\brief Set root directory inode
@@ -1042,7 +1042,7 @@ libsqfs_image_set_root(libsqfs_image_t image, libsqfs_directory_inode_t root);
 libsqfs_directory_inode_t
 libsqfs_image_get_root(libsqfs_image_t image);
 
-/*@}*/
+/** @} */
 
 #ifdef __cpluscplus
 }
