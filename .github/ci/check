@@ -2,6 +2,11 @@
 
 set -eu
 
+step()
+{
+    printf '\n==== %s ====\n' "$1"
+}
+
 clean_build()
 {
     if test -f Makefile; then
@@ -30,17 +35,29 @@ check_zstd_image()
     trap - EXIT HUP INT TERM
 }
 
+step 'Normal build: configure'
 clean_build
 ./autogen.sh --disable-shared
+
+step 'Normal build: compile'
 make -j8
+
+step 'Normal build: unit tests'
 make check
+
+step 'Normal build: Zstd interoperability'
 check_zstd_image
 
+step 'Sanitizer build: configure'
 clean_build
 ./autogen.sh --disable-shared \
     CFLAGS='-O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer' \
     LDFLAGS='-fsanitize=address,undefined'
+
+step 'Sanitizer build: compile'
 make -j8
+
+step 'Sanitizer build: unit tests'
 ASAN_OPTIONS='detect_leaks=1:halt_on_error=1' \
 UBSAN_OPTIONS='halt_on_error=1:print_stacktrace=1' \
     make check

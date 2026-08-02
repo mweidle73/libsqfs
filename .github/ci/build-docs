@@ -12,5 +12,7 @@ make doc
 test -s doc/index.html
 grep -Fq 'Repository status' doc/index.html
 grep -Fq 'libsqfs_compressor_zstd_create_default' \
-    doc/libsqfs_8h_source.html
+    doc/group__compressors.html
+grep -Fq 'libsqfs_image_create' doc/group__images.html
+grep -Fq 'libsqfs_fifo_inode_create' doc/group__fifo__inodes.html
 test -z "$(find doc -type l -print -quit)"
