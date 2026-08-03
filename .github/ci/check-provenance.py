@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-"""Check the archived Gitorious snapshot used as libsqfs provenance."""
+"""Check the archived Gitorious master and tag inventory."""
 
 import json
 import sys
@@ -15,9 +15,14 @@ def main() -> int:
     with urllib.request.urlopen(URL, timeout=30) as response:
         payload = json.load(response)
 
-    branch = payload.get("branches", {}).get("refs/heads/master")
+    branches = payload.get("branches", {})
+    branch = branches.get("refs/heads/master")
+    tag_refs = sorted(name for name in branches if name.startswith("refs/tags/"))
     if payload.get("id") != SNAPSHOT:
         print("Software Heritage returned a different snapshot", file=sys.stderr)
+        return 1
+    if payload.get("next_branch") is not None:
+        print("Archived reference inventory is incomplete", file=sys.stderr)
         return 1
     if (
         not branch
@@ -26,9 +31,15 @@ def main() -> int:
     ):
         print("Archived master does not match the pinned revision", file=sys.stderr)
         return 1
+    if tag_refs:
+        print("Archived upstream unexpectedly contains tag refs:", file=sys.stderr)
+        for name in tag_refs:
+            print(f"  {name}", file=sys.stderr)
+        return 1
 
     print(f"snapshot: {SNAPSHOT}")
     print(f"master:   {MASTER}")
+    print("tags:     none")
     return 0
 
 
