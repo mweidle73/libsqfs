@@ -530,7 +530,7 @@ typedef struct libsqfs_inodeattr * libsqfs_inodeattr_t;
 	\param image @c squashfs image handle
 	\param uid uid
 	\param gid gid
-	\param mode File mode
+	\param mode File mode; file type bits are ignored
 	\param ctime Creation time
 	\return Attribute handle, or NULL on failure with errno set appropriately
 */
@@ -579,7 +579,7 @@ libsqfs_xattrset_create(libsqfs_image_t image, size_t nattrs, libsqfs_xattr_t at
 	\param image @c squashfs image handle
 	\param uid uid
 	\param gid gid
-	\param mode File mode
+	\param mode File mode; file type bits are ignored
 	\param ctime Creation time
 	\param xattr Extended attributes (may be NULL if there are no extended attributes)
 	\return Attribute handle, or NULL on failure with errno set appropriately

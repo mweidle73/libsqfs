@@ -49,7 +49,8 @@ libsqfs_inodeattr_create_simple(libsqfs_image_t image, uid_t uid, gid_t gid, mod
 	
 	attr->uid = uid;
 	attr->gid = gid;
-	attr->mode = mode;
+	/* SquashFS stores the inode type separately from its permission bits. */
+	attr->mode = SQUASHFS_MODE(mode);
 	attr->ctime = ctime;
 	
 	attr->mapped_uid = libsqfs_idtable_map(&image->idtable, uid);
