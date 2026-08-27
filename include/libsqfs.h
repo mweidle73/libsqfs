@@ -21,6 +21,7 @@
 #define LIBSQFS_H
 
 #include <stdbool.h>
+#include <stdint.h>
 #include <sys/types.h>
 #include <libsqfs/site-config.h>
 
@@ -282,6 +283,18 @@ libsqfs_image_options_set_exportable(libsqfs_image_options_t options, bool expor
 */
 void
 libsqfs_image_options_set_padding(libsqfs_image_options_t options, bool padding);
+
+/**
+	\brief Control the filesystem creation timestamp
+	\param options Handle for options
+	\param creation_time Unsigned Unix timestamp stored in the superblock
+
+	Setting this option, including to zero, replaces the wall-clock timestamp
+	used by default when the image is created.
+*/
+void
+libsqfs_image_options_set_creation_time(libsqfs_image_options_t options,
+	uint32_t creation_time);
 
 /**
 	\brief Control generation of fragment blocks

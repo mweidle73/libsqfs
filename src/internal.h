@@ -96,6 +96,8 @@ struct libsqfs_image_options {
 	bool exportable;
 	libsqfs_compressor * compressor;
 	bool padding;
+	bool creation_time_set;
+	uint32_t creation_time;
 	size_t block_size, block_size_log;
 };
 
