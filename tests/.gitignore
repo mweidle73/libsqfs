@@ -1,6 +1,8 @@
+test-creation-time
 test-dir-layout
 test-empty-image
 test-file-xattrs
+test-inode-mode
 test-options
 test-simple-file
 test-special-files

@@ -35,6 +35,8 @@ libsqfs_image_options_defaults(libsqfs_image_options_t options)
 #endif
 	options->compressor = libsqfs_compressor_copy(default_compressor);
 	options->padding = true;
+	options->creation_time_set = false;
+	options->creation_time = 0;
 	options->block_size_log = 17 /* SQUASHFS_FILE_LOG */;
 	options->block_size = 1 << options->block_size_log;
 }
@@ -105,6 +107,14 @@ libsqfs_image_options_set_padding(libsqfs_image_options_t options, bool padding)
 }
 
 void
+libsqfs_image_options_set_creation_time(libsqfs_image_options_t options,
+	uint32_t creation_time)
+{
+	options->creation_time = creation_time;
+	options->creation_time_set = true;
+}
+
+void
 libsqfs_image_options_set_fragment_option(libsqfs_image_options_t options, libsqfs_fragments_option fragments)
 {
 	options->fragments = fragments;
@@ -164,7 +174,9 @@ libsqfs_image_create(libsqfs_destination_t destination, libsqfs_image_options_t 
 	
 	image->dst = destination;
 	image->size = 0;
-	image->creation_time = time(NULL);
+	image->creation_time = image->options->creation_time_set
+		? image->options->creation_time
+		: time(NULL);
 	image->state = libsqfs_image_building;
 	image->error_msg = 0;
 	pthread_mutex_init(&image->state_mutex, 0);
